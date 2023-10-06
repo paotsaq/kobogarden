@@ -40,6 +40,8 @@ class TestingKoboDatabase(unittest.TestCase):
         self.assertEqual(rows[2], '2023-08-30T06:13:56.000')
         self.assertEqual(rows[3], 'text/part0011.html#point(/1/4/192/3:147)')
         self.assertEqual(rows[4], 'text/part0011.html#point(/1/4/192/3:530)')
+        self.quote = rows[1]
+        self.quote_location = rows[3]
 
     # # this will be useful to be able to select 
     # # quotes just from a particular book and author.
@@ -66,7 +68,7 @@ class TestingKoboDatabase(unittest.TestCase):
 
 class TestingParsingEpubFiles(unittest.TestCase):
     def test_can_open_epub_file(self):
-        book = epub.read_epub(TEST_EPUB_JANEEYRE)
+        book = epub.read_epub(TEST_EPUB_BERLIN)
         self.assertTrue(type(book) == epub.EpubBook)
 
     # epubs are fundamentally HTML files,
@@ -75,15 +77,16 @@ class TestingParsingEpubFiles(unittest.TestCase):
     # highlights already have the exact location of the quote;
     # I only need to provide the surrounding context, and, later,
     # an option to expand or contract the quote.
-    # def test_can_read_parsed_epub_file(self):
-        # book = epub.read_epub(TEST_EPUB_JANEEYRE)
-        # for item in book.get_items_of_type(ITEM_DOCUMENT):
-            # soup = BeautifulSoup(item.get_content(), 'html.parser')
-            # text = soup.get_text()
-            # print(text)
-            # if DESIRED_SENTENCE in text:
-                # print("FOUND IT")
-            # input()
+    def test_can_find_quote_in_epub_file(self):
+        book = epub.read_epub(TEST_EPUB_BERLIN)
+        quote = 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.'
+        section = book.get_item_with_href('text/part0011.html')
+        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
+        start_index = soup.find(quote)
+        end_index = start_index + len(quote)
+        print(start_index)
+        print(end_index)
+        print(soup[start_index:end_index + 1])
 
     # # trying to access Jane Eyre
     # def test_can_get_quote_using_container_path(self):
