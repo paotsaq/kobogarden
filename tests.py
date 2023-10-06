@@ -77,13 +77,12 @@ class TestingKoboDatabase(unittest.TestCase):
 
 
 class TestingFindingQuoteInEpubFiles(unittest.TestCase):
-    def test_can_open_epub_file(self):
-        book = epub.read_epub(TEST_EPUB_BERLIN)
-        self.assertTrue(type(book) == epub.EpubBook)
-
     # epubs are fundamentally HTML files,
     # which should be pre-processed with BeautifulSoup;
     # otherwise, it can be very hard to find the text
+
+    # if there is an exact quote, the `get_full_context_from_highlight`
+    # can provide a full quote
     def test_can_find_full_quote_in_epub_file(self):
         FULL_CAR_QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.'
         soup = get_full_context_from_highlight(TEST_EPUB_BERLIN, 'text/part0011.html')
@@ -118,21 +117,6 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         res = expand_quote(PARTIAL_QUOTE, soup, False)
         res = expand_quote(res, soup, False)
         self.assertEqual(res, FULL_QUOTE)
-
-    # trying to access Berlin
-    def test_can_get_another_quote_using_container_path(self):
-        book = epub.read_epub(TEST_EPUB_BERLIN)
-        # raw_db_href comes from the `StartContainerPath`;
-        # I suppose all quotes will have the same path in both
-        # `StartContainerPath` and `EndContainerPath`;
-        # thus, it should be okay to assume the path is the same for both.
-        raw_db_href = "OEBPS/xhtml/chapter20.xhtml#point(/1/4/68/1:165)"
-        if "OEBPS/" == raw_db_href[:5]:
-            path, point = raw_db_href[6:].split('#')
-        # item = book.get_item_with_href(href)
-        html_items = [item.file_name for item in list(book.get_items())]
-        print("6048514455528670785_1260-h-21.htm.html" in html_items)
-        # print(html_items)
 
 
 if __name__ == '__main__':
