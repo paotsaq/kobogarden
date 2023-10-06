@@ -43,27 +43,34 @@ class TestingKoboDatabase(unittest.TestCase):
         self.quote = rows[1]
         self.quote_location = rows[3]
 
-    # # this will be useful to be able to select 
-    # # quotes just from a particular book and author.
-    # # NOTE how to make this on a single query?
-    # def test_can_retrieve_a_list_of_books_which_have_highlights(self):
-        # conn = sqlite3.connect(SQLITE_DB_PATH + SQLITE_DB_NAME)
-        # c = conn.cursor()
+    # TODO refactor this into its own function.
+    def test_can_retrieve_a_list_of_books_which_have_highlights(self):
+        def take_epub_file_name_from_path(path: str):
+            return path.split('/')[-1]
+        conn = sqlite3.connect(SQLITE_DB_PATH + SQLITE_DB_NAME)
+        c = conn.cursor()
 
-        # # Execute the SQL query
-        # c.execute("""
-        # SELECT
-        # content.title as BookTitle,
-        # Bookmark.Text,
-        # Bookmark.DateCreated
-        # FROM "Bookmark"
-        # LEFT OUTER JOIN content
-        # ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
-        # WHERE
-        # BookmarkID="94ace0c6-b132-48b1-b0d9-1ef0e38db1ed"
-        # """)
-        # rows = c.fetchall()
-        # print(rows)
+        # Execute the SQL query
+        c.execute("""
+        SELECT 
+            unique_book_titles.BookTitle,
+            content.Attribution,
+            content.ContentID
+        FROM 
+            (SELECT DISTINCT content.title as BookTitle
+            FROM "Bookmark"
+            LEFT OUTER JOIN content
+            ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)) as unique_book_titles
+        LEFT OUTER JOIN content
+        ON unique_book_titles.BookTitle = content.Title
+        """)
+        results = c.fetchall()  # Fetch all results
+
+        parsed = [
+                [title, author, take_epub_file_name_from_path(file)]
+                for title, author, file in results
+                ]
+        self.assertIn(['The Ghosts of Berlin: Confronting German History in the Urban Landscape', 'Brian Ladd', '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub'], parsed)
 
 
 class TestingParsingEpubFiles(unittest.TestCase):
@@ -73,17 +80,13 @@ class TestingParsingEpubFiles(unittest.TestCase):
 
     # epubs are fundamentally HTML files,
     # which should be pre-processed with BeautifulSoup
-    # NOTE this is not the correct approach;
-    # highlights already have the exact location of the quote;
-    # I only need to provide the surrounding context, and, later,
-    # an option to expand or contract the quote.
     def test_can_find_quote_in_epub_file(self):
+        FULL_CAR_QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.'
         book = epub.read_epub(TEST_EPUB_BERLIN)
-        quote = 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.'
         section = book.get_item_with_href('text/part0011.html')
         soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
-        start_index = soup.find(quote)
-        end_index = start_index + len(quote)
+        start_index = soup.find(FULL_CAR_QUOTE)
+        end_index = start_index + len(FULL_CAR_QUOTE)
         print(start_index)
         print(end_index)
         print(soup[start_index:end_index + 1])
