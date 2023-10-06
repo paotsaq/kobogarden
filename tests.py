@@ -109,6 +109,15 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         res = expand_quote(PARTIAL_QUOTE, soup, False)
         self.assertEqual(res, FULL_QUOTE)
 
+    def test_can_extend_quote_forwards_until_next_period(self):
+        PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
+        FULL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two. This brings us to our last point about energy: it can be converted among its many forms—kinetic energy, heat, work, chemical energy, and so on—but it can never be lost."""
+        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        soup = get_full_context_from_highlight(TEST_EPUB_BURN, section.split('#')[0])
+        # `soup` is ALL CONTEXT; from here, one can trim 
+        res = expand_quote(PARTIAL_QUOTE, soup, False)
+        res = expand_quote(res, soup, False)
+        self.assertEqual(res, FULL_QUOTE)
 
     # trying to access Berlin
     def test_can_get_another_quote_using_container_path(self):
