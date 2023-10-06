@@ -12,7 +12,9 @@ def create_connection_to_database(
     return conn
 
 
-def get_highlight_from_database(highlight_id: str):
+def get_highlight_from_database(
+        highlight_id: str
+        ) -> list[str]:
     """returns a list with
     title of book, full highlight content, date of highlight,
     start of highlight, end of highlight"""
@@ -34,3 +36,19 @@ def get_highlight_from_database(highlight_id: str):
     content = c.fetchall()[0]
     conn.close()
     return content
+
+def expand_quote(
+    quote_to_expand: str,
+    context: str,
+    backwards: bool
+        ) -> str:
+
+    start_index = context.find(quote_to_expand)
+    end_index = start_index + len(quote_to_expand)
+    if backwards:
+        new_index = context[start_index - 200:start_index].rfind('.')
+        new_quote = context[start_index - 200 + new_index + 1:end_index].strip()
+    else:
+        new_index = context[start_index:end_index + 200].find('.')
+        new_quote = context[start_index:new_index].strip()
+    return new_quote
