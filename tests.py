@@ -8,7 +8,7 @@ DESIRED_SENTENCE = """It is in vain to say human beings ought to be satisfied wi
 ANOTHER_DESIRED_SENTENCE = """if she were a nice, pretty child, one might compassionate her forlornness"""
 
 
-SQLITE_DB_PATH = "/users/alexj/kobo_highlights/"
+SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
 EXISTING_IDS_FILE = "~/home/apinto/paogarden/existing_ids.txt"
 class TestingKoboDatabase(unittest.TestCase):
@@ -90,9 +90,10 @@ class TestingParsingEpubFiles(unittest.TestCase):
 
     def test_can_get_quote_using_container_path(self):
         book = epub.read_epub(TEST_EPUB_FILE)
-        href = "OEBPS/6048514455528670785_1260-h-25.htm.html"
+        href = "OEBPS/6048514455528670785_1260-h-21.htm.html"
         item = book.get_item_with_href(href)
         print(dir(item))
+
 
 if __name__ == '__main__':
     unittest.main()
