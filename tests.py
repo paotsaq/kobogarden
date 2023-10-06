@@ -125,19 +125,28 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
         # `soup` is ALL CONTEXT; from here, one can trim 
         res = expand_quote(PARTIAL_QUOTE, soup, True)
-        print(res)
         self.assertEqual(res,
                          """Our modern food production system violates the fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction.""")
 
+    def test_can_extend_quote_forwards_until_period(self):
+        PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) 
+"""
+        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        path = section.split('#')[0]
+        book = epub.read_epub(TEST_EPUB_BURN)
+        # the OEBPS/ must be ommited - not sure why!
+        section = None
+        while section is None:
+            print(path)
+            section = book.get_item_with_href(path)
+            path = "/".join(path.split("/")[1:])
+        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
+        # `soup` is ALL CONTEXT; from here, one can trim 
+        x = soup.find(PARTIAL_QUOTE[:100])
+        res = expand_quote(PARTIAL_QUOTE, soup, False)
+        self.assertEqual(res,
+                         """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two.""")
 
-    # # trying to access Jane Eyre
-    # def test_can_get_quote_using_container_path(self):
-        # book = epub.read_epub(TEST_EPUB_JANEEYRE)
-        # href = "OEBPS/6048514455528670785_1260-h-21.htm.html"
-        # # item = book.get_item_with_href(href)
-        # html_items = [item.file_name for item in list(book.get_items())]
-        # print("6048514455528670785_1260-h-21.htm.html" in html_items)
-        # print(html_items)
 
     # trying to access Berlin
     def test_can_get_another_quote_using_container_path(self):
