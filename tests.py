@@ -86,66 +86,28 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     # otherwise, it can be very hard to find the text
     def test_can_find_full_quote_in_epub_file(self):
         FULL_CAR_QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.'
-        soup = get_full_context_from_highlight(FULL_CAR_QUOTE, TEST_EPUB_BERLIN, 'text/part0011.html')
+        soup = get_full_context_from_highlight(TEST_EPUB_BERLIN, 'text/part0011.html')
         start_index = soup.find(FULL_CAR_QUOTE)
         end_index = start_index + len(FULL_CAR_QUOTE)
         self.assertEqual(FULL_CAR_QUOTE, soup[start_index:end_index])
 
-    def test_can_find_partial_quote_in_epub_file(self):
-        PARTIAL_QUOTE = """fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction.
-"""
-        print(PARTIAL_QUOTE)
-        title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
-        path = section.split('#')[0]
-        book = epub.read_epub(TEST_EPUB_BURN)
-        # the OEBPS/ must be ommited - not sure why!
-        section = None
-        while section is None:
-            print(path)
-            section = book.get_item_with_href(path)
-            path = "/".join(path.split("/")[1:])
-        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
-        # `soup` is ALL CONTEXT; from here, one can trim 
-        # start_index = soup.find(PARTIAL_QUOTE)
-        # end_index = start_index + len(PARTIAL_QUOTE)
-        # print(soup[start_index - 300:end_index])
-
     def test_can_extend_quote_backwards_until_period(self):
-        PARTIAL_QUOTE = """fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction.
-"""
+        PARTIAL_QUOTE = """fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction."""
+        FULL_QUOTE = """Our modern food production system violates the fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction."""
         title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
-        path = section.split('#')[0]
-        book = epub.read_epub(TEST_EPUB_BURN)
         # the OEBPS/ must be ommited - not sure why!
-        section = None
-        while section is None:
-            print(path)
-            section = book.get_item_with_href(path)
-            path = "/".join(path.split("/")[1:])
-        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
-        # `soup` is ALL CONTEXT; from here, one can trim 
+        soup = get_full_context_from_highlight(TEST_EPUB_BURN, section.split('#')[0])
         res = expand_quote(PARTIAL_QUOTE, soup, True)
-        self.assertEqual(res,
-                         """Our modern food production system violates the fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction.""")
+        self.assertEqual(res, FULL_QUOTE)
 
     def test_can_extend_quote_forwards_until_period(self):
-        PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) 
-"""
+        PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
+        FULL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
         title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
-        path = section.split('#')[0]
-        book = epub.read_epub(TEST_EPUB_BURN)
-        # the OEBPS/ must be ommited - not sure why!
-        section = None
-        while section is None:
-            print(path)
-            section = book.get_item_with_href(path)
-            path = "/".join(path.split("/")[1:])
-        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
+        soup = get_full_context_from_highlight(TEST_EPUB_BURN, section.split('#')[0])
         # `soup` is ALL CONTEXT; from here, one can trim 
-        x = soup.find(PARTIAL_QUOTE[:100])
         res = expand_quote(PARTIAL_QUOTE, soup, False)
-        self.assertEqual(res,
-                         """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two.""")
+        self.assertEqual(res, FULL_QUOTE)
 
 
     # trying to access Berlin
