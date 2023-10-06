@@ -2,7 +2,8 @@ import unittest
 from utils import (
         create_connection_to_database,
         get_highlight_from_database,
-        expand_quote
+        expand_quote,
+        get_full_context_from_highlight
         )
 from bs4 import BeautifulSoup
 import sqlite3
@@ -85,11 +86,10 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     # otherwise, it can be very hard to find the text
     def test_can_find_full_quote_in_epub_file(self):
         FULL_CAR_QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.'
-        book = epub.read_epub(TEST_EPUB_BERLIN)
-        section = book.get_item_with_href('text/part0011.html')
-        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
+        soup = get_full_context_from_highlight(FULL_CAR_QUOTE, TEST_EPUB_BERLIN, 'text/part0011.html')
         start_index = soup.find(FULL_CAR_QUOTE)
         end_index = start_index + len(FULL_CAR_QUOTE)
+        self.assertEqual(FULL_CAR_QUOTE, soup[start_index:end_index])
 
     def test_can_find_partial_quote_in_epub_file(self):
         PARTIAL_QUOTE = """fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction.
