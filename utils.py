@@ -40,15 +40,23 @@ def get_highlight_from_database(
 def expand_quote(
     quote_to_expand: str,
     context: str,
-    backwards: bool
+    backwards: bool,
+    cons: int = 200
         ) -> str:
 
-    start_index = context.find(quote_to_expand)
+    start_index = context.find(quote_to_expand[:-1])
+    if start_index == -1:
+        print("Could not find context!")
+        return ""
     end_index = start_index + len(quote_to_expand)
     if backwards:
-        new_index = context[start_index - 200:start_index].rfind('.')
-        new_quote = context[start_index - 200 + new_index + 1:end_index].strip()
+        new_index = context[start_index - cons:start_index].rfind('.')
+        if new_index == -1:
+            return expand_quote(quote_to_expand, context, backwards, cons + 200)
+        new_quote = context[start_index - cons + new_index + 1:end_index].strip()
     else:
-        new_index = context[start_index:end_index + 200].find('.')
-        new_quote = context[start_index:new_index].strip()
+        new_index = context[start_index:end_index + cons].rfind('.')
+        if new_index == -1:
+            return expand_quote(quote_to_expand, context, backwards, cons + 200)
+        new_quote = context[start_index:start_index + new_index + 1].strip()
     return new_quote
