@@ -25,13 +25,21 @@ class TestingKoboDatabase(unittest.TestCase):
         self.assertTrue(type(c) == sqlite3.Cursor)
 
     # returns many fields from the query
-    def test_can_retrieve_highlight_content_from_ID(self):
+    def test_can_retrieve_jane_eyre_highlight_content_from_ID(self):
         rows = get_highlight_from_database("94ace0c6-b132-48b1-b0d9-1ef0e38db1ed")
         self.assertEqual(rows[0], 'Jane Eyre: An Autobiography')
         self.assertEqual(rows[1], '\nI had made no noise: he had not eyes behind—could his shadow feel?')
         self.assertEqual(rows[2], '2023-08-30T18:09:48.000')
         self.assertEqual(rows[3], 'OEBPS/6048514455528670785_1260-h-25.htm.html#point(/1/4/1/21:1)')
         self.assertEqual(rows[4], 'OEBPS/6048514455528670785_1260-h-25.htm.html#point(/1/4/1/22/1:69)')
+
+    def test_can_retrieve_berlin_highlight_content_from_ID(self):
+        rows = get_highlight_from_database("f27d6696-d59a-4cb1-a329-310fd17d6eea")
+        self.assertEqual(rows[0], 'The Ghosts of Berlin: Confronting German History in the Urban Landscape')
+        self.assertEqual(rows[1], 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.')
+        self.assertEqual(rows[2], '2023-08-30T06:13:56.000')
+        self.assertEqual(rows[3], 'text/part0011.html#point(/1/4/192/3:147)')
+        self.assertEqual(rows[4], 'text/part0011.html#point(/1/4/192/3:530)')
 
     # # this will be useful to be able to select 
     # # quotes just from a particular book and author.
