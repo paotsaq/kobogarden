@@ -66,7 +66,6 @@ def expand_quote(
 
 
 def get_full_context_from_highlight(
-        highlight: str,
         book_path: str,
         section_path: str
         ) -> str:
@@ -76,6 +75,6 @@ def get_full_context_from_highlight(
         section = None
         while section is None:
             section = book.get_item_with_href(section_path)
-
+            section_path = "/".join(section_path.split("/")[1:])
         soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
         return soup
