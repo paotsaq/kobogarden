@@ -1,4 +1,6 @@
 import sqlite3
+from bs4 import BeautifulSoup
+from ebooklib import epub
 
 SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
@@ -37,6 +39,7 @@ def get_highlight_from_database(
     conn.close()
     return content
 
+
 def expand_quote(
     quote_to_expand: str,
     context: str,
@@ -60,3 +63,19 @@ def expand_quote(
             return expand_quote(quote_to_expand, context, backwards, cons + 200)
         new_quote = context[start_index:start_index + new_index + 1].strip()
     return new_quote
+
+
+def get_full_context_from_highlight(
+        highlight: str,
+        book_path: str,
+        section_path: str
+        ) -> str:
+        book = epub.read_epub(book_path)
+        if not book:
+            raise FileNotFoundError("The book doesn't seem to exist?")
+        section = None
+        while section is None:
+            section = book.get_item_with_href(section_path)
+
+        soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
+        return soup
