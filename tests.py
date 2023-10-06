@@ -3,11 +3,10 @@ from utils import (
         create_connection_to_database,
         get_highlight_from_database,
         expand_quote,
-        get_full_context_from_highlight
+        get_full_context_from_highlight,
+        get_list_of_highlighted_books
         )
-from bs4 import BeautifulSoup
 import sqlite3
-from ebooklib import epub, ITEM_DOCUMENT
 
 TEST_EPUB_JANEEYRE = 'jane-eyre.epub'
 TEST_EPUB_BERLIN = 'berlin.epub'
@@ -48,32 +47,8 @@ class TestingKoboDatabase(unittest.TestCase):
 
     # TODO refactor this into its own function.
     def test_can_retrieve_a_list_of_books_which_have_highlights(self):
-        def take_epub_file_name_from_path(path: str):
-            return path.split('/')[-1]
-        conn = sqlite3.connect(SQLITE_DB_PATH + SQLITE_DB_NAME)
-        c = conn.cursor()
-
-        # Execute the SQL query
-        c.execute("""
-        SELECT 
-            unique_book_titles.BookTitle,
-            content.Attribution,
-            content.ContentID
-        FROM 
-            (SELECT DISTINCT content.title as BookTitle
-            FROM "Bookmark"
-            LEFT OUTER JOIN content
-            ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)) as unique_book_titles
-        LEFT OUTER JOIN content
-        ON unique_book_titles.BookTitle = content.Title
-        """)
-        results = c.fetchall()  # Fetch all results
-
-        parsed = [
-                [title, author, take_epub_file_name_from_path(file)]
-                for title, author, file in results
-                ]
-        self.assertIn(['The Ghosts of Berlin: Confronting German History in the Urban Landscape', 'Brian Ladd', '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub'], parsed)
+        res = get_list_of_highlighted_books('./test_kobo_db.sqlite')
+        self.assertIn(['The Ghosts of Berlin: Confronting German History in the Urban Landscape', 'Brian Ladd', '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub'], res)
 
 
 class TestingFindingQuoteInEpubFiles(unittest.TestCase):
