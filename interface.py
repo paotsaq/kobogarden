@@ -12,24 +12,11 @@ from utils import (
 from rich.table import Table
 
 
-class HighlightOverview(Option):
-    CSS_PATH = "highlight_overview.tcss"
-
-    def __init__(self, highlight: str, timestamp: str) -> None:
-        super().__init__(highlight, disabled=False)  # Add the disabled attribute
-        self.highlight = highlight
-        self.timestamp = timestamp
-        self.styles.background = "blue"
-
-    def compose(self) -> ComposeResult:
-        yield Static(self.highlight)
-        yield Static(self.timestamp)
-
 
 class BookHighlightsWidget(Screen):
-    def __init__(self, name: str, selected_option: str) -> None:
+    def __init__(self, name: str, selected_option: Option) -> None:
         super().__init__(name)
-        self.selected_option = selected_option
+        self.book = selected_option.id
 
     @staticmethod
     def highlight_generator(highlight: str, date: str) -> Table:
@@ -40,7 +27,7 @@ class BookHighlightsWidget(Screen):
 
     def compose(self) -> ComposeResult:
         highlights = [self.highlight_generator(*highlight_info) for highlight_info 
-                 in get_all_highlights_of_book_from_database('Trip')]
+                 in get_all_highlights_of_book_from_database(self.book)]
         # Store the OptionList instance as an attribute
         self.option_list = OptionList(*highlights)
         yield Header()
@@ -50,24 +37,12 @@ class BookHighlightsWidget(Screen):
         if event.key == "q":
             self.dismiss()
 
-
 class MainScreen(App[None]):
     CSS_PATH = "option_list.tcss"
-    COLORS = [
-        "white",
-        "maroon",
-        "red",
-        "purple",
-        "fuchsia",
-        "olive",
-        "yellow",
-        "navy",
-        "teal",
-        "aqua",
-    ]
+
     
     def compose(self) -> ComposeResult:
-        books = [f'{title} by {author}' for title, author, _
+        books = [Option(f'{title} by {author}', id=title) for title, author, _
                  in get_list_of_highlighted_books('./test_kobo_db.sqlite')]
         # Store the OptionList instance as an attribute
         self.option_list = OptionList(*books)
@@ -75,17 +50,11 @@ class MainScreen(App[None]):
         yield self.option_list  # Yield the stored OptionList instance
         yield Footer()
 
-    def on_mount(self) -> None:
-        self.selected_option = None
-        self.install_screen(BookHighlightsWidget("panel",
-                                                 self.selected_option),
-                            name="highlight_panel")
-
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
             selected_option_index = self.option_list.highlighted
-            self.selected_option = self.option_list._options[selected_option_index]
-            self.push_screen("highlight_panel")
+            selected_option = self.option_list._options[selected_option_index]
+            self.push_screen(BookHighlightsWidget("panel", selected_option))
 
 if __name__ == "__main__":
     MainScreen().run()
