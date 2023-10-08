@@ -30,6 +30,7 @@ def get_all_highlights_of_book_from_database(
     ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
     WHERE
     content.Title="{book_name}"
+    ORDER BY Bookmark.DateCreated
     """)
     content = c.fetchall()
     conn.close()
