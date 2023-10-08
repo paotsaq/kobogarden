@@ -4,7 +4,7 @@ from ebooklib import epub
 
 SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
-EXISTING_IDS_FILE = "/home/apinto/paogarden/existing_ids.txt"
+EXISTING_IDS_FILE = "./existing_ids.txt"
 
 
 def create_connection_to_database(
@@ -12,6 +12,28 @@ def create_connection_to_database(
         ) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     return conn
+
+
+def get_all_highlights_of_book_from_database(
+        book_name: str
+        ) -> list[str]:
+    """returns a list with
+    full highlight content and date of highlight"""
+    conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
+    c = conn.cursor()
+    c.execute(f"""
+    SELECT
+    Bookmark.Text,
+    Bookmark.DateCreated
+    FROM "Bookmark"
+    LEFT OUTER JOIN content
+    ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
+    WHERE
+    content.Title="{book_name}"
+    """)
+    content = c.fetchall()
+    conn.close()
+    return content
 
 
 def get_highlight_from_database(
@@ -107,4 +129,3 @@ def get_full_context_from_highlight(
         section_path = "/".join(section_path.split("/")[1:])
     soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
     return soup
-
