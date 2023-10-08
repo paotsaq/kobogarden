@@ -24,7 +24,8 @@ def get_all_highlights_of_book_from_database(
     c.execute(f"""
     SELECT
     Bookmark.Text,
-    Bookmark.DateCreated
+    Bookmark.DateCreated,
+    BookmarkID
     FROM "Bookmark"
     LEFT OUTER JOIN content
     ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
