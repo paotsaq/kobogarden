@@ -1,24 +1,54 @@
 from textual.app import App, ComposeResult
 from textual.widget import Widget
-from textual.widgets import Footer, Header, OptionList, Placeholder
+from textual.widgets import Footer, Header, OptionList, Static
 from textual import events
 from textual.screen import Screen
 from textual.reactive import reactive
-from utils import get_list_of_highlighted_books
+from textual.widgets.option_list import Option, Separator
+from utils import (
+        get_list_of_highlighted_books,
+        get_all_highlights_of_book_from_database
+        )
+from rich.table import Table
 
 
-class SelectedOptionWidget(Screen):
+class HighlightOverview(Option):
+    CSS_PATH = "highlight_overview.tcss"
+
+    def __init__(self, highlight: str, timestamp: str) -> None:
+        super().__init__(highlight, disabled=False)  # Add the disabled attribute
+        self.highlight = highlight
+        self.timestamp = timestamp
+        self.styles.background = "blue"
+
+    def compose(self) -> ComposeResult:
+        yield Static(self.highlight)
+        yield Static(self.timestamp)
+
+
+class BookHighlightsWidget(Screen):
     def __init__(self, name: str, selected_option: str) -> None:
         super().__init__(name)
         self.selected_option = selected_option
 
+    @staticmethod
+    def highlight_generator(highlight: str, date: str) -> Table:
+        table = Table(show_header=False)
+        table.add_row(date.split('T')[0])
+        table.add_row(highlight)
+        return table
+
+    def compose(self) -> ComposeResult:
+        highlights = [self.highlight_generator(*highlight_info) for highlight_info 
+                 in get_all_highlights_of_book_from_database('Trip')]
+        # Store the OptionList instance as an attribute
+        self.option_list = OptionList(*highlights)
+        yield Header()
+        yield self.option_list  # Yield the stored OptionList instance
+
     def on_key(self, event: events.Key) -> None:
         if event.key == "q":
             self.dismiss()
-
-    def compose(self) -> ComposeResult:
-        yield Header()
-        yield Footer()
 
 
 class MainScreen(App[None]):
@@ -47,7 +77,7 @@ class MainScreen(App[None]):
 
     def on_mount(self) -> None:
         self.selected_option = None
-        self.install_screen(SelectedOptionWidget("panel",
+        self.install_screen(BookHighlightsWidget("panel",
                                                  self.selected_option),
                             name="highlight_panel")
 
@@ -55,7 +85,6 @@ class MainScreen(App[None]):
         if event.key == "enter":
             selected_option_index = self.option_list.highlighted
             self.selected_option = self.option_list._options[selected_option_index]
-            self.log(f"You selected: {self.selected_option}")
             self.push_screen("highlight_panel")
 
 if __name__ == "__main__":

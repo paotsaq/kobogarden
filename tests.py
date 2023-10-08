@@ -4,7 +4,8 @@ from utils import (
         get_highlight_from_database,
         expand_quote,
         get_full_context_from_highlight,
-        get_list_of_highlighted_books
+        get_list_of_highlighted_books,
+        get_all_highlights_of_book_from_database
         )
 import sqlite3
 
@@ -45,10 +46,13 @@ class TestingKoboDatabase(unittest.TestCase):
         self.quote = rows[1]
         self.quote_location = rows[3]
 
-    # TODO refactor this into its own function.
     def test_can_retrieve_a_list_of_books_which_have_highlights(self):
         res = get_list_of_highlighted_books('./test_kobo_db.sqlite')
         self.assertIn(['The Ghosts of Berlin: Confronting German History in the Urban Landscape', 'Brian Ladd', '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub'], res)
+
+    def test_can_provide_all_highlights_from_a_given_book(self):
+        res = get_all_highlights_of_book_from_database('The Ghosts of Berlin: Confronting German History in the Urban Landscape')
+        self.assertEqual(len(res), 26)
 
 
 class TestingFindingQuoteInEpubFiles(unittest.TestCase):
