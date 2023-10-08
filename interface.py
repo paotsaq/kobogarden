@@ -1,6 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.widget import Widget
-from textual.widgets import Footer, Header, OptionList, Static
+from textual.widgets import Footer, Header, OptionList, Static, Markdown
 from textual import events
 from textual.screen import Screen
 from textual.reactive import reactive
@@ -8,14 +8,19 @@ from textual.widgets.option_list import Option, Separator
 from utils import (
         get_list_of_highlighted_books,
         get_all_highlights_of_book_from_database,
-        get_highlight_from_database
+        get_highlight_from_database,
+        get_context_indices_for_highlight_display,
+        get_full_context_from_highlight
         )
 from rich.table import Table
 
 
-class SingleHighlightsWidget(Screen):
-    def __init__(self, name: str, highlight: Option) -> None:
-        super().__init__(name)
+class SingleHighlightWidget(Widget):
+    start = reactive(0)
+    end = reactive(0)
+
+    def __init__(self, highlight: Option) -> None:
+        super().__init__()
         self.highlight = highlight
 
     @staticmethod
@@ -25,13 +30,27 @@ class SingleHighlightsWidget(Screen):
         table.add_row(highlight)
         return table
 
+    def render(self) -> str:
+        _, highlight, _, section, _ = get_highlight_from_database(self.highlight.id)
+        soup = get_full_context_from_highlight('./burn.epub', section.split('#')[0])
+        self.start, self.end = get_context_indices_for_highlight_display(soup, highlight)
+        return f"""`...{soup[self.start-300:self.start].strip()}` **{soup[self.start:self.end].strip()}** `{soup[self.end:self.end + 300].strip()}...`"""
+
+
+class SingleHighlightsScreen(Screen):
+    def __init__(self, name: str, highlight: Option) -> None:
+        super().__init__(name)
+        self.highlight = highlight
+
     def compose(self) -> ComposeResult:
-        yield Static(get_highlight_from_database(self.highlight.id)[1])
+        yield SingleHighlightWidget(self.highlight)
         yield Header()
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "q":
             self.dismiss()
+        elif event.key == "a":
+            self.query_one(SingleHighlightWidget).start += 50
 
 class BookHighlightsWidget(Screen):
     def __init__(self, name: str, selected_option: Option) -> None:
@@ -78,7 +97,7 @@ class MainScreen(App[None]):
     def on_key(self, event: events.Key) -> None:
         def check_highlights_panel_quit(highlight: str | None):
             if highlight:
-                self.push_screen(SingleHighlightsWidget("panel", highlight))
+                self.push_screen(SingleHighlightsScreen("panel", highlight))
             else:
                 pass
 
