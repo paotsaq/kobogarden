@@ -131,3 +131,12 @@ def get_full_context_from_highlight(
         section_path = "/".join(section_path.split("/")[1:])
     soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
     return soup
+
+
+def get_context_indices_for_highlight_display(
+        context: str,
+        highlight: str
+        ):
+    start_index = context.find(highlight)
+    end_index = start_index + len(highlight)
+    return start_index, end_index
