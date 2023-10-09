@@ -13,12 +13,13 @@ from utils import (
         get_full_context_from_highlight
         )
 from rich.table import Table
-
+from rich.text import Text
 
 class SingleHighlightWidget(Widget):
-
     start = reactive(0)
     end = reactive(0)
+    early_context = reactive(0)
+    later_context = reactive(0)
 
     def __init__(self, highlight: Option, soup: str, start: int, end: int) -> None:
         super().__init__()
@@ -26,6 +27,8 @@ class SingleHighlightWidget(Widget):
         self.soup = soup
         self.start = start
         self.end = end
+        self.early_context = self.start - 300
+        self.later_context = self.end + 300
 
     @staticmethod
     def highlight_generator(highlight: str, date: str) -> Table:
@@ -35,7 +38,11 @@ class SingleHighlightWidget(Widget):
         return table
 
     def render(self) -> str:
-        return f"""`...{self.soup[self.start-300:self.start].strip()}` **{self.soup[self.start:self.end].strip()}** `{self.soup[self.end:self.end + 300].strip()}...`"""
+        text = Text()
+        text.append(f"...{self.soup[self.early_context:self.start].strip()}", style='#828282')
+        text.append(f" {self.soup[self.start:self.end].strip()} ", style='bold')
+        text.append(f"{self.soup[self.end:self.later_context].strip()}...", style='#828282')
+        return text
 
 
 class SingleHighlightsScreen(Screen):
@@ -54,8 +61,26 @@ class SingleHighlightsScreen(Screen):
     def on_key(self, event: events.Key) -> None:
         if event.key == "q":
             self.dismiss()
-        elif event.key == "a":
+        elif event.key == "h":
+            self.query_one(SingleHighlightWidget).start -= 1
+        elif event.key == "l":
+            self.query_one(SingleHighlightWidget).end -= 1
+        elif event.key == "j":
+            self.query_one(SingleHighlightWidget).start += 1
+        elif event.key == "k":
+            self.query_one(SingleHighlightWidget).end += 1
+        elif event.key == "J":
             self.query_one(SingleHighlightWidget).start += 50
+        elif event.key == "K":
+            self.query_one(SingleHighlightWidget).end += 50
+        elif event.key == "b":
+            self.query_one(SingleHighlightWidget).early_context += 50
+        elif event.key == "f":
+            self.query_one(SingleHighlightWidget).later_context += 50
+        elif event.key == "B":
+            self.query_one(SingleHighlightWidget).early_context -= 50
+        elif event.key == "F":
+            self.query_one(SingleHighlightWidget).later_context -= 50
 
 class BookHighlightsWidget(Screen):
     def __init__(self, name: str, selected_option: Option) -> None:
