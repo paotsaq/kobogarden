@@ -16,12 +16,16 @@ from rich.table import Table
 
 
 class SingleHighlightWidget(Widget):
+
     start = reactive(0)
     end = reactive(0)
 
-    def __init__(self, highlight: Option) -> None:
+    def __init__(self, highlight: Option, soup: str, start: int, end: int) -> None:
         super().__init__()
         self.highlight = highlight
+        self.soup = soup
+        self.start = start
+        self.end = end
 
     @staticmethod
     def highlight_generator(highlight: str, date: str) -> Table:
@@ -31,10 +35,7 @@ class SingleHighlightWidget(Widget):
         return table
 
     def render(self) -> str:
-        _, highlight, _, section, _ = get_highlight_from_database(self.highlight.id)
-        soup = get_full_context_from_highlight('./burn.epub', section.split('#')[0])
-        self.start, self.end = get_context_indices_for_highlight_display(soup, highlight)
-        return f"""`...{soup[self.start-300:self.start].strip()}` **{soup[self.start:self.end].strip()}** `{soup[self.end:self.end + 300].strip()}...`"""
+        return f"""`...{self.soup[self.start-300:self.start].strip()}` **{self.soup[self.start:self.end].strip()}** `{self.soup[self.end:self.end + 300].strip()}...`"""
 
 
 class SingleHighlightsScreen(Screen):
@@ -43,8 +44,12 @@ class SingleHighlightsScreen(Screen):
         self.highlight = highlight
 
     def compose(self) -> ComposeResult:
-        yield SingleHighlightWidget(self.highlight)
+        _, highlight, _, section, _ = get_highlight_from_database(self.highlight.id)
+        soup = get_full_context_from_highlight('./burn.epub', section.split('#')[0])
+        start, end = get_context_indices_for_highlight_display(soup, highlight)
+        yield SingleHighlightWidget(self.highlight, soup, start, end)
         yield Header()
+        yield Footer()
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "q":
