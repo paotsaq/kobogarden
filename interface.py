@@ -1,6 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.widget import Widget
-from textual.widgets import Footer, Header, OptionList, Static, Markdown
+from textual.widgets import Footer, Header, OptionList, Input
 from textual import events
 from textual.screen import Screen
 from textual.reactive import reactive
@@ -55,6 +55,7 @@ class SingleHighlightsScreen(Screen):
         soup = get_full_context_from_highlight('./burn.epub', section.split('#')[0])
         start, end = get_context_indices_for_highlight_display(soup, highlight)
         yield SingleHighlightWidget(self.highlight, soup, start, end)
+        yield Input()
         yield Header()
         yield Footer()
 
