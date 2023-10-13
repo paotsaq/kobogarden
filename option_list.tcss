@@ -1,0 +1,20 @@
+Screen {
+    align: center middle;
+}
+
+OptionList {
+    width: 90%;
+    height: 90%;
+}
+
+SingleHighlightsScreen {
+    width: 90%;
+    height: 90%;
+	align: center middle;
+}
+
+.highlight_input {
+	margin: 1 0 0 0;
+	width: 60%;
+	align: center middle;
+}
