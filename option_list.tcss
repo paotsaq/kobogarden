@@ -18,3 +18,7 @@ SingleHighlightsScreen {
 	width: 60%;
 	align: center middle;
 }
+
+Button {
+	margin: 1 0 0 0;
+}
