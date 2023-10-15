@@ -2,6 +2,8 @@ import sqlite3
 from bs4 import BeautifulSoup
 from ebooklib import epub
 
+### DATABASE
+
 SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
 EXISTING_IDS_FILE = "./existing_ids.txt"
@@ -51,8 +53,7 @@ def get_highlight_from_database(
     content.title as BookTitle,
     Bookmark.Text,
     Bookmark.DateCreated,
-    StartContainerPath,
-    EndContainerPath
+    StartContainerPath
     FROM "Bookmark"
     LEFT OUTER JOIN content
     ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
@@ -93,6 +94,19 @@ def get_list_of_highlighted_books(
             ]
     return parsed
 
+
+### PREVIOUS QUOTES
+
+def record_in_highlight_id(highlight_id: str) -> bool:
+    with open(SQLITE_DB_PATH + EXISTING_IDS_FILE, "r") as file:
+        return highlight_id in file.read().splitlines()
+
+def add_highlight_id_to_record(highlight_id: str) -> None:
+    """This function doesn't check whether the highlight already exists!"""
+    with open(SQLITE_DB_PATH + EXISTING_IDS_FILE, "a") as file:
+        file.write(highlight_id + '\n')
+
+### QUOTE HANDLING
 
 def expand_quote(
     quote_to_expand: str,
@@ -140,3 +154,26 @@ def get_context_indices_for_highlight_display(
     start_index = context.find(highlight)
     end_index = start_index + len(highlight)
     return start_index, end_index
+
+
+def produce_tiddler_string(
+        created_timestamp: str,
+        tags: str,
+        highlight_title: str,
+        comment: str,
+        highlight: str
+        ) -> str:
+    return f"""
+    created: {created_timestamp}
+    creator: paotsaq
+    modified: {created_timestamp}
+    modifier: paotsaq
+    tags: {" ".join(tags)}
+    title: {highlight_title}
+    type: text/vnd.tiddlywiki
+
+    {comment}
+    <<<
+    {highlight}
+    <<<
+    """
