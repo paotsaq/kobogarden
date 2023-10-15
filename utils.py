@@ -161,19 +161,20 @@ def produce_tiddler_string(
         tags: str,
         highlight_title: str,
         comment: str,
-        highlight: str
+        highlight: str,
+        quote_order: int
         ) -> str:
-    return f"""
-    created: {created_timestamp}
-    creator: paotsaq
-    modified: {created_timestamp}
-    modifier: paotsaq
-    tags: {" ".join(tags)}
-    title: {highlight_title}
-    type: text/vnd.tiddlywiki
+    return f"""created: {created_timestamp}
+creator: paotsaq
+modified: {created_timestamp}
+modifier: paotsaq
+tags: {tags}
+title: {highlight_title}
+type: text/vnd.tiddlywiki
 
-    {comment}
-    <<<
-    {highlight}
-    <<<
-    """
+{comment}
+
+<<<
+{highlight}
+<<<
+"""
