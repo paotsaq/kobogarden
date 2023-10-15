@@ -171,6 +171,7 @@ modifier: paotsaq
 tags: {tags}
 title: {highlight_title}
 type: text/vnd.tiddlywiki
+quote-order: {'0' if quote_order < 10 else '' + str(quote_order)}
 
 {comment}
 
