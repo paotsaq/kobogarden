@@ -91,27 +91,6 @@ class BookHighlightsWidget(Screen):
             self.dismiss(['H', [self.book, selected_option]])
 
 
-class ConfirmHighlightScreen(Screen):
-    """Screen with a tiddler information to add"""
-
-    def __init__(self, highlight: str, comments: str, tags: str) -> None:
-        super().__init__()
-        self.highlight = highlight
-        self.comments = comments
-        self.tags = tags
-
-    def compose(self) -> ComposeResult:
-        yield Grid(
-            Label("just making sure!", id="question"),
-        )
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "quit":
-            self.app.exit()
-        else:
-            self.app.pop_screen()
-
-
 class SingleHighlightWidget(Widget, can_focus=True):
     start = reactive(0)
     end = reactive(0)
@@ -208,7 +187,7 @@ class SingleHighlightsScreen(Screen):
         formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
         tiddler = produce_tiddler_string(
                 formatted_now,
-                self.highlight_tags.value,
+                self.book + ' ' + self.highlight_tags.value,
                 self.highlight_title.value,
                 self.highlight_notes.value,
                 self.highlight_widget.quote
