@@ -12,9 +12,12 @@ from utils import (
         get_highlight_from_database,
         get_context_indices_for_highlight_display,
         get_full_context_from_highlight,
-        produce_tiddler_string,
+        produce_highlight_tiddler_string,
         record_in_highlight_id,
-        add_highlight_id_to_record
+        add_highlight_id_to_record,
+        book_tiddler_exists,
+        increment_book_tiddler_highlight_number,
+        create_book_tiddler
         )
 from rich.table import Table
 from rich.text import Text
@@ -183,21 +186,33 @@ class SingleHighlightsScreen(Screen):
         # TODO this should be better handled
         if self.highlight_title.value == "":
             return
+
+        # Access or create book tiddler, and retrieve the `highlight_order`
+        if book_tiddler_exists(self.book):
+            highlight_order = increment_book_tiddler_highlight_number(self.book)
+        else:
+            create_book_tiddler(self.book, "AUTHOR_IS_MISSING")
+            highlight_order = 1
+
         # Remove the last 3 digits of microseconds
         formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
-        tiddler = produce_tiddler_string(
+
+        # Creates the tiddler string
+        tiddler = produce_highlight_tiddler_string(
                 formatted_now,
                 self.book + ' ' + self.highlight_tags.value,
                 self.highlight_title.value,
                 self.highlight_notes.value,
-                self.highlight_widget.quote
+                self.highlight_widget.quote,
+                highlight_order
                 )
+
+        # Writes the new tiddler file
         with open(PAOGARDEN_PATH + self.highlight_title.value + '.tid', "w") as file:
             file.write(tiddler)
 
+
         add_highlight_id_to_record(self.highlight.id)
-
-
 
 
 if __name__ == "__main__":
