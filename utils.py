@@ -1,9 +1,11 @@
 import sqlite3
 from bs4 import BeautifulSoup
 from ebooklib import epub
+from os import listdir
 
 ### DATABASE
 
+TIDDLERS_PATH = '/users/alexj/paogarden/tiddlers/'
 SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
 EXISTING_IDS_FILE = "./existing_ids.txt"
@@ -156,7 +158,7 @@ def get_context_indices_for_highlight_display(
     return start_index, end_index
 
 
-def produce_tiddler_string(
+def produce_highlight_tiddler_string(
         created_timestamp: str,
         tags: str,
         highlight_title: str,
@@ -179,3 +181,31 @@ quote-order: {'0' if quote_order < 10 else '' + str(quote_order)}
 {highlight}
 <<<
 """
+
+def produce_book_tiddler_string(
+        created_timestamp: str,
+        book: str,
+        author: str,
+        ) -> str:
+    """The function is only responsible for creating
+    the book tiddler; it will be necessary to update the 
+    `nbr_of_highlights` field on a separate function."""
+    return f"""created: {created_timestamp}
+creator: paotsaq
+modified: {created_timestamp}
+modifier: paotsaq
+tags: book
+title: {book}
+author: {author}
+nbr_of_highlights: 0
+type: text/vnd.tiddlywiki
+
+\\import [tag[macro]]
+
+<$list filter="[tag<currentTiddler>sort[quote-order]]">
+   <$macrocall $name="renderTitleAndContent" tiddler=<<currentTiddler>> />
+</$list>
+"""
+
+def book_tiddler_exists(book_title: str) -> bool:
+    return book_title + '.tid' in listdir(TIDDLERS_PATH)
