@@ -125,7 +125,7 @@ class SingleHighlightWidget(Widget, can_focus=True):
     def render(self) -> Text:
         text = Text()
         text.append(f"...{self.soup[self.early_context:self.start].strip()}", style='#828282')
-        text.append(f" {self.quote} ", style='bold')
+        text.append(f" {self.soup[self.start:self.end].strip()} ", style='bold')
         text.append(f"{self.soup[self.end:self.later_context].strip()}...", style='#828282')
         return text
 
