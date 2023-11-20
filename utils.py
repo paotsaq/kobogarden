@@ -87,6 +87,7 @@ def get_list_of_highlighted_books(
         ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)) as unique_book_titles
     LEFT OUTER JOIN content
     ON unique_book_titles.BookTitle = content.Title
+    WHERE content.Attribution IS NOT NULL
     """)
     results = c.fetchall()  # Fetch all results
     conn.close()
