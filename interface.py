@@ -23,7 +23,7 @@ from rich.table import Table
 from rich.text import Text
 from datetime import datetime
 
-BOOKS_PATH = ""
+BOOKS_PATH = "/users/alexj/books/"
 PAOGARDEN_PATH = "/users/alexj/paogarden/tiddlers/"
 
 
