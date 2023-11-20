@@ -11,12 +11,12 @@ SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
 EXISTING_IDS_FILE = "kobo highlight ids of quotes.tid"
 
-
 def create_connection_to_database(
         path: str
         ) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     return conn
+
 
 def get_all_highlights_of_book_from_database(
         book_name: str
@@ -55,7 +55,8 @@ def get_highlight_from_database(
     content.title as BookTitle,
     Bookmark.Text,
     Bookmark.DateCreated,
-    StartContainerPath
+    StartContainerPath,
+    Bookmark.VolumeID
     FROM "Bookmark"
     LEFT OUTER JOIN content
     ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
@@ -63,6 +64,10 @@ def get_highlight_from_database(
     BookmarkID="{highlight_id}"
     """)
     content = c.fetchall()[0]
+    fixed_path = content[4].split('/')[-1]
+    content = tuple(list(content[:4]) + [fixed_path])
+    if fixed_path[-5:] != '.epub':
+        raise FileNotFoundError 
     conn.close()
     return content
 
@@ -103,6 +108,7 @@ def get_list_of_highlighted_books(
 def record_in_highlight_id(highlight_id: str) -> bool:
     with open(TIDDLERS_PATH + EXISTING_IDS_FILE, "r") as file:
         return highlight_id in file.read().splitlines()
+
 
 def add_highlight_id_to_record(highlight_id: str) -> None:
     """This function doesn't check whether the highlight already exists!"""
@@ -224,14 +230,14 @@ def create_book_tiddler(
     with open(TIDDLERS_PATH + book_title + '.tid', 'w') as file:
         file.write(content)
     
-
 def increment_book_tiddler_highlight_number(book_title: str) -> int:
     """The function increments the book tiddler highlight number,
     but also returns the number of highlights"""
-    NBR_OF_HIGHLIGHTS_LINE_INDEX = 7
+    NBR_OF_HIGHLIGHTS_LINE_INDEX = 5
     with open(TIDDLERS_PATH + book_title + '.tid', 'r') as file:
         content = file.read()
     lines = content.splitlines()
+    print(lines)
     highlight_count = int(lines[NBR_OF_HIGHLIGHTS_LINE_INDEX].split()[1])
     print(highlight_count)
     lines[NBR_OF_HIGHLIGHTS_LINE_INDEX] = f'nbr_of_highlights: {highlight_count + 1}'
