@@ -1,17 +1,22 @@
 import unittest
+from datetime import datetime
 from utils import (
         create_connection_to_database,
         get_highlight_from_database,
         expand_quote,
         get_full_context_from_highlight,
         get_list_of_highlighted_books,
-        get_all_highlights_of_book_from_database
+        get_all_highlights_of_book_from_database,
+        get_context_indices_for_highlight_display,
+        produce_book_tiddler_string,
+        produce_highlight_tiddler_string
         )
 import sqlite3
 
 TEST_EPUB_JANEEYRE = 'jane-eyre.epub'
 TEST_EPUB_BERLIN = 'berlin.epub'
 TEST_EPUB_BURN = 'burn.epub'
+TEST_EPUB_HOWTO = 'howto.epub'
 DESIRED_SENTENCE = """It is in vain to say human beings ought to be satisfied with tranquillity: they must have action, and they will make it if they cannot find it."""
 ANOTHER_DESIRED_SENTENCE = """if she were a nice, pretty child, one might compassionate her forlornness"""
 
@@ -43,7 +48,7 @@ class TestingKoboDatabase(unittest.TestCase):
         self.assertEqual(rows[1], 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.')
         self.assertEqual(rows[2], '2023-08-30T06:13:56.000')
         self.assertEqual(rows[3], 'text/part0011.html#point(/1/4/192/3:147)')
-        self.assertEqual(rows[4], 'The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub')
+        self.assertEqual(rows[4], '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub')
         self.quote = rows[1]
         self.quote_location = rows[3]
 
@@ -93,10 +98,73 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         FULL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two. This brings us to our last point about energy: it can be converted among its many forms—kinetic energy, heat, work, chemical energy, and so on—but it can never be lost."""
         title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_EPUB_BURN, section.split('#')[0])
-        # `soup` is ALL CONTEXT; from here, one can trim 
         res = expand_quote(PARTIAL_QUOTE, soup, False)
         res = expand_quote(res, soup, False)
         self.assertEqual(res, FULL_QUOTE)
+
+    # 10/20 - I selected a quote in the main interface panel, which had the correct highlight content,
+    # but when entering the quote editing panel, the context was not correct at all.
+    # This test aims to ensure the highlight will match the expanded context
+    # Notice how the highlight has an extra space before `In the face(...)`,
+    # which is not present in the context
+
+    def test_highlight_will_match_context(self):
+        """In the early twentieth century, the surrealist painter Giorgio de Chirico foresaw a narrowing horizon for activities as “unproductive” as observation. He wrote:
+
+ In the face of the increasingly materialist and pragmatic orientation of our age…it would not be eccentric in the future to contemplate a society in which those who live for the pleasures of the mind will no longer have the right to demand their place in the sun. The writer, the thinker, the dreamer, the poet, the metaphysician, the observer…he who tries to solve a riddle or to pass judgement will become an anachronistic figure, destined to disappear from the face of the earth like the ichthyosaur and the mammoth.4"""
+        HIGHLIGHT_ID = "b22af57c-2b8c-494f-ac99-96fa698f1dac"
+        title, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
+        soup = get_full_context_from_highlight(TEST_EPUB_HOWTO, section.split('#')[0])
+        self.assertNotEqual(soup, None)
+        res = expand_quote(highlight, soup, False)
+        start, end = get_context_indices_for_highlight_display(soup, highlight)
+        print(start, end)
+        self.assertNotEqual(res, None)
+
+
+class TestingCreationOfHighlightTiddler(unittest.TestCase):
+
+    # 11/21 tags were failing when the book title had spaces.
+    # ideally, the `produce_highlight_tiddler_string` will 
+    # enclose any given tag (including book title) with double square brackets.
+    def test_can_create_highlight_tiddler(self):
+        self.maxDiff = None
+        # Remove the last 3 digits of microseconds
+        formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        book = 'How to do Nothing'
+        title = 'this is just a test tiddler'
+        comment = 'I don\'t know what to say'
+        highlight = 'really, this is just a test tiddler'
+
+        # Creates the tiddler string
+        tiddler = produce_highlight_tiddler_string(
+                formatted_now,
+                [book, 'test', 'another test'],
+                title,
+                comment,
+                highlight,
+                1
+                )
+        result = f"""created: {formatted_now}
+creator: paotsaq
+modified: {formatted_now}
+modifier: paotsaq
+tags: [[{book}]] test [[another test]]
+title: {title}
+type: text/vnd.tiddlywiki
+quote-order: 01
+
+{comment}
+
+<<<
+{highlight}
+<<<
+"""
+        self.assertEqual(tiddler,result) 
+
+
+
+    
 
 
 if __name__ == '__main__':
