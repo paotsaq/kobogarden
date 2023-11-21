@@ -125,8 +125,11 @@ def expand_quote(
         ) -> str:
     start_index = context.find(quote_to_expand[:-1])
     if start_index == -1:
-        print("Could not find context!")
-        return ""
+        # NOTE THIS IS JUST A QUICKFIX
+        start_index = context.find(quote_to_expand[:70])
+        if start_index == -1:
+            print("Could not find context!")
+            return ""
     end_index = start_index + len(quote_to_expand)
     if backwards:
         new_index = context[start_index - cons:start_index].rfind('.')
@@ -149,9 +152,13 @@ def get_full_context_from_highlight(
     if not book:
         raise FileNotFoundError("The book doesn't seem to exist?")
     section = None
-    while section is None:
+    i = 0
+    while section is None and i < 20:
         section = book.get_item_with_href(section_path)
         section_path = "/".join(section_path.split("/")[1:])
+        i += 1
+    if section is None:
+        return None
     soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
     return soup
 
@@ -167,7 +174,7 @@ def get_context_indices_for_highlight_display(
 
 def produce_highlight_tiddler_string(
         created_timestamp: str,
-        tags: str,
+        tags: list,
         highlight_title: str,
         comment: str,
         highlight: str,
@@ -177,7 +184,7 @@ def produce_highlight_tiddler_string(
 creator: paotsaq
 modified: {created_timestamp}
 modifier: paotsaq
-tags: {tags}
+tags: {" ".join([tag if ' ' not in tag else f'[[{tag}]]' for tag in tags])}
 title: {highlight_title}
 type: text/vnd.tiddlywiki
 quote-order: {'0' if quote_order < 10 else ''}{str(quote_order)}

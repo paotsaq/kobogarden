@@ -62,6 +62,7 @@ class MainScreen(App[None]):
             self.push_screen(BookHighlightsWidget("panel", selected_option),
                              check_highlights_panel_quit)
 
+
 class BookHighlightsWidget(Screen):
     """Screen responsible for displaying each books' highlights"""
     def __init__(self, name: str, selected_option: Option) -> None:
@@ -138,8 +139,9 @@ class SingleHighlightsScreen(Screen):
         self.book, self.highlight = content
 
     def compose(self) -> ComposeResult:
-        _, highlight, _, section = get_highlight_from_database(self.highlight.id)
-        soup = get_full_context_from_highlight('./burn.epub', section.split('#')[0])
+        _, highlight, _, section, book_file_name = get_highlight_from_database(self.highlight.id)
+        soup = get_full_context_from_highlight(BOOKS_PATH + book_file_name, section.split('#')[0])
+        # NOTE this is problematic
         start, end = get_context_indices_for_highlight_display(soup, highlight)
         self.highlight_widget = SingleHighlightWidget(self.highlight, soup, start, end)
 
@@ -150,8 +152,8 @@ class SingleHighlightsScreen(Screen):
         self.highlight_tags = Input(classes='highlight_input',
                     placeholder='space separated tags?')
         yield self.highlight_widget       
-        yield self.highlight_notes
         yield self.highlight_title
+        yield self.highlight_notes
         yield self.highlight_tags
         yield Header()
         yield Footer()
@@ -200,7 +202,7 @@ class SingleHighlightsScreen(Screen):
         # Creates the tiddler string
         tiddler = produce_highlight_tiddler_string(
                 formatted_now,
-                self.book + ' ' + self.highlight_tags.value,
+                [self.book] + self.highlight_tags.value.split(),
                 self.highlight_title.value,
                 self.highlight_notes.value,
                 self.highlight_widget.quote,
