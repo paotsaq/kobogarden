@@ -240,14 +240,22 @@ def create_book_tiddler(
 def increment_book_tiddler_highlight_number(book_title: str) -> int:
     """The function increments the book tiddler highlight number,
     but also returns the number of highlights"""
-    NBR_OF_HIGHLIGHTS_LINE_INDEX = 5
     with open(TIDDLERS_PATH + book_title + '.tid', 'r') as file:
         content = file.read()
     lines = content.splitlines()
-    print(lines)
-    highlight_count = int(lines[NBR_OF_HIGHLIGHTS_LINE_INDEX].split()[1])
-    print(highlight_count)
-    lines[NBR_OF_HIGHLIGHTS_LINE_INDEX] = f'nbr_of_highlights: {highlight_count + 1}'
+    # NOTE the try/except block handles the weird rearrangement 
+    # of the tiddler's inner structure whenever the author field
+    # is changed through the TiddlyWiki frontend. 
+    # solving the `AUTHOR_IS_MISSING` hardcode is not guaranteed to be a solution
+    # because that might be wrong at some points too.
+    try:
+        NBR_OF_HIGHLIGHTS_LINE_INDEX = 7
+        highlight_count = int(lines[NBR_OF_HIGHLIGHTS_LINE_INDEX].split()[1])
+        lines[NBR_OF_HIGHLIGHTS_LINE_INDEX] = f'nbr_of_highlights: {highlight_count + 1}'
+    except ValueError:
+        NBR_OF_HIGHLIGHTS_LINE_INDEX = 5
+        highlight_count = int(lines[NBR_OF_HIGHLIGHTS_LINE_INDEX].split()[1])
+        lines[NBR_OF_HIGHLIGHTS_LINE_INDEX] = f'nbr_of_highlights: {highlight_count + 1}'
     with open(TIDDLERS_PATH + book_title + '.tid', 'w') as file:
         content = file.write("\n".join(lines))
     return highlight_count + 1
