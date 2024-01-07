@@ -1,5 +1,5 @@
 from datetime import datetime
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.widgets import Footer, Header, OptionList, Input, Button
 from textual import events
@@ -9,17 +9,14 @@ from textual.widgets.option_list import Option
 from rich.table import Table
 from rich.text import Text
 from utils.const import (
-    DATABASE_PATH,
+    OPTIONS_CSS_PATH,
     TIDDLERS_PATH,
         )
 from utils.database import (
         get_highlight_from_database,
-        get_all_highlights_of_book_from_database,
-        get_list_of_highlighted_books,
         )
 from utils.tiddler_handling import (
     produce_highlight_tiddler_string,
-    record_in_highlight_id
 )
 from utils.highlight_handling import (
         expand_quote,
@@ -27,77 +24,6 @@ from utils.highlight_handling import (
         get_context_indices_for_highlight_display,
         get_start_and_end_of_highlight,
         )
-
-class MainScreen(App[None]):
-    """Application starts here. Main panel will have an OptionList
-    object, with each available book for highlights.
-    This class is responsible for handling the different screens."""
-    CSS_PATH = "option_list.tcss"
-
-    def compose(self) -> ComposeResult:
-        books = [Option(f'{title} by {author}', id=title) for title, author, _
-                 in get_list_of_highlighted_books(DATABASE_PATH)]
-
-        # Store the OptionList instance as an attribute
-        self.option_list = OptionList(*books)
-        yield Header()
-        yield self.option_list  # Yield the stored OptionList instance
-        yield Footer()
-
-    def on_key(self, event: events.Key) -> None:
-        # NOTE maybe some enums / different types (instead of
-        # hardcoded single-letter strings?)
-        def check_highlights_panel_quit(options: list | None):
-            """Helper function to determine outcomes of different screens"""
-            next_screen, content = options
-            if next_screen == 'H':
-                self.push_screen(SingleHighlightsScreen("panel", content))
-            elif next_screen == 'C':
-                self.push_screen(ConfirmHighlightScreen("confirm", *content))
-
-        # a book has been chosen on the main panel
-        if event.key == "enter":
-            selected_option_index = self.option_list.highlighted
-            selected_option = self.option_list._options[selected_option_index]
-            self.push_screen(BookHighlightsWidget("panel", selected_option),
-                             check_highlights_panel_quit)
-
-
-class BookHighlightsWidget(Screen):
-    """Screen responsible for displaying each books' highlights"""
-
-    def __init__(self, name: str, selected_option: Option) -> None:
-        super().__init__(name)
-        self.book = selected_option.id
-
-    @staticmethod
-    def highlight_generator(
-            highlight: str,
-            date: str,
-            highlight_id: str) -> Table:
-        table = Table(show_header=False)
-        table.add_row(date.split('T')[0] + ' | ' +
-                      str('✅' if record_in_highlight_id(highlight_id)
-                          else '❌'))
-        table.add_row(highlight.strip())
-        return Option(table, id=highlight_id)
-
-    def compose(self) -> ComposeResult:
-        highlights = [self.highlight_generator(*highlight_info)
-                      for highlight_info
-                      in get_all_highlights_of_book_from_database(self.book)]
-        # Store the OptionList instance as an attribute
-        self.option_list = OptionList(*highlights)
-        yield Header()
-        yield self.option_list  # Yield the stored OptionList instance
-
-    def on_key(self, event: events.Key) -> None:
-        if event.key == "q":
-            self.dismiss()
-        elif event.key == "enter":
-            selected_option_index = self.option_list.highlighted
-            selected_option = self.option_list._options[selected_option_index]
-            self.dismiss(['H', [self.book, selected_option]])
 
 
 class SingleHighlightWidget(Widget, can_focus=True):
@@ -137,7 +63,7 @@ class SingleHighlightWidget(Widget, can_focus=True):
 
 
 class SingleHighlightsScreen(Screen):
-    CSS_PATH = "option_list.tcss"
+    CSS_PATH = OPTIONS_CSS_PATH
 
     def __init__(self, name: str, content: tuple[str, Option]) -> None:
         super().__init__(name)
@@ -223,7 +149,3 @@ class SingleHighlightsScreen(Screen):
             file.write(tiddler)
 
         add_highlight_id_to_record(self.highlight.id)
-
-
-if __name__ == "__main__":
-    MainScreen().run()
