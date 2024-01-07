@@ -1,32 +1,32 @@
+from datetime import datetime
 from textual.app import App, ComposeResult
 from textual.widget import Widget
-from textual.containers import Grid 
-from textual.widgets import Footer, Header, OptionList, Input, Button, Label
+from textual.widgets import Footer, Header, OptionList, Input, Button
 from textual import events
 from textual.screen import Screen
 from textual.reactive import reactive
 from textual.widgets.option_list import Option
-from utils import (
-        get_list_of_highlighted_books,
-        get_all_highlights_of_book_from_database,
-        get_highlight_from_database,
-        get_context_indices_for_highlight_display,
-        get_full_context_from_highlight,
-        produce_highlight_tiddler_string,
-        record_in_highlight_id,
-        add_highlight_id_to_record,
-        book_tiddler_exists,
-        increment_book_tiddler_highlight_number,
-        create_book_tiddler
-        )
 from rich.table import Table
 from rich.text import Text
-from datetime import datetime
-
-BOOKS_PATH = "/home/apinto/books/"
-PAOGARDEN_PATH = "/home/apinto/paogarden/tiddlers/"
-DATABASE_PATH = "./test_kobo_db.sqlite"
-
+from utils.const import (
+    DATABASE_PATH,
+    TIDDLERS_PATH,
+        )
+from utils.database import (
+        get_highlight_from_database,
+        get_all_highlights_of_book_from_database,
+        get_list_of_highlighted_books,
+        )
+from utils.tiddler_handling import (
+    produce_highlight_tiddler_string,
+    record_in_highlight_id
+)
+from utils.highlight_handling import (
+        expand_quote,
+        get_full_context_from_highlight,
+        get_context_indices_for_highlight_display,
+        get_start_and_end_of_highlight,
+        )
 
 class MainScreen(App[None]):
     """Application starts here. Main panel will have an OptionList
@@ -45,7 +45,7 @@ class MainScreen(App[None]):
         yield Footer()
 
     def on_key(self, event: events.Key) -> None:
-        # NOTE maybe some enums / different types (instead of 
+        # NOTE maybe some enums / different types (instead of
         # hardcoded single-letter strings?)
         def check_highlights_panel_quit(options: list | None):
             """Helper function to determine outcomes of different screens"""
@@ -145,7 +145,7 @@ class SingleHighlightsScreen(Screen):
 
     def compose(self) -> ComposeResult:
         _, highlight, _, section, book_file_name = get_highlight_from_database(self.highlight.id)
-        soup = get_full_context_from_highlight(BOOKS_PATH + book_file_name, section.split('#')[0])
+        soup = get_full_context_from_highlight(book_file_name, section.split('#')[0])
         # NOTE this is problematic
         start, end = get_context_indices_for_highlight_display(soup, highlight)
         self.highlight_widget = SingleHighlightWidget(self.highlight, soup, start, end)
@@ -219,7 +219,7 @@ class SingleHighlightsScreen(Screen):
                 )
 
         # Writes the new tiddler file
-        with open(PAOGARDEN_PATH + self.highlight_title.value + '.tid', "w") as file:
+        with open(TIDDLERS_PATH + self.highlight_title.value + '.tid', "w") as file:
             file.write(tiddler)
 
         add_highlight_id_to_record(self.highlight.id)

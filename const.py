@@ -1,1 +1,0 @@
-BOOKS_DIR = "books/"
