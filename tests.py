@@ -1,19 +1,25 @@
 import unittest
-from datetime import datetime
-from utils import (
-        create_connection_to_database,
-        get_highlight_from_database,
-        expand_quote,
-        get_full_context_from_highlight,
-        get_list_of_highlighted_books,
-        get_all_highlights_of_book_from_database,
-        get_context_indices_for_highlight_display,
-        get_start_and_end_of_highlight,
-        produce_book_tiddler_string,
-        produce_highlight_tiddler_string
-        )
 import sqlite3
 from functools import reduce
+from datetime import datetime
+from utils.database import (
+        create_connection_to_database,
+        get_highlight_from_database,
+        get_all_highlights_of_book_from_database,
+        get_list_of_highlighted_books,
+        )
+from utils.tiddler_handling import (
+    produce_highlight_tiddler_string
+)
+from utils.highlight_handling import (
+        expand_quote,
+        get_full_context_from_highlight,
+        get_start_and_end_of_highlight,
+        )
+from utils.const import (
+    SQLITE_DB_PATH,
+    SQLITE_DB_NAME,
+)
 
 TEST_EPUB_JANEEYRE = 'jane-eyre.epub'
 TEST_EPUB_BERLIN = 'berlin.epub'
@@ -23,9 +29,6 @@ DESIRED_SENTENCE = """It is in vain to say human beings ought to be satisfied wi
 ANOTHER_DESIRED_SENTENCE = """if she were a nice, pretty child, one might compassionate her forlornness"""
 
 
-SQLITE_DB_PATH = "./"
-SQLITE_DB_NAME = "test_kobo_db.sqlite"
-EXISTING_IDS_FILE = "~/home/apinto/paogarden/existing_ids.txt"
 
 # def normalise_whitespace_in_highlight(highlight: str) -> list[str]:
 # return list(filter(lambda s: s != '',
@@ -36,7 +39,8 @@ EXISTING_IDS_FILE = "~/home/apinto/paogarden/existing_ids.txt"
 
 class TestingKoboDatabase(unittest.TestCase):
     def test_can_open_kobo_database(self):
-        conn = sqlite3.connect(SQLITE_DB_PATH + SQLITE_DB_NAME)
+        conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
+        self.assertIsNotNone(conn)
         c = conn.cursor()
         self.assertTrue(type(c) == sqlite3.Cursor)
         conn.close()
