@@ -23,8 +23,8 @@ from rich.table import Table
 from rich.text import Text
 from datetime import datetime
 
-BOOKS_PATH = "/users/alexj/books/"
-PAOGARDEN_PATH = "/users/alexj/paogarden/tiddlers/"
+BOOKS_PATH = "/home/apinto/books/"
+PAOGARDEN_PATH = "/home/apinto/paogarden/tiddlers/"
 
 
 class MainScreen(App[None]):
@@ -75,7 +75,7 @@ class BookHighlightsWidget(Screen):
         table.add_row(date.split('T')[0] + ' | ' +
                       str('✅' if record_in_highlight_id(highlight_id)
                            else '❌'))
-        table.add_row(highlight)
+        table.add_row(highlight.strip())
         return Option(table, id=highlight_id)
 
     def compose(self) -> ComposeResult:
@@ -114,7 +114,6 @@ class SingleHighlightWidget(Widget, can_focus=True):
         self.styles.width = "60%"
         self.styles.height = "40%"
         self.styles.padding = 2
-        self.quote = self.soup[self.start:self.end].strip()
 
     @staticmethod
     def highlight_generator(highlight: str, date: str) -> Table:
@@ -125,6 +124,7 @@ class SingleHighlightWidget(Widget, can_focus=True):
 
     def render(self) -> Text:
         text = Text()
+        self.quote = self.soup[self.start:self.end].strip()
         text.append(f"...{self.soup[self.early_context:self.start].strip()}", style='#828282')
         text.append(f" {self.soup[self.start:self.end].strip()} ", style='bold')
         text.append(f"{self.soup[self.end:self.later_context].strip()}...", style='#828282')
@@ -165,22 +165,26 @@ class SingleHighlightsScreen(Screen):
             self.dismiss()
         elif event.key == "h":
             self.query_one(SingleHighlightWidget).start -= 1
-        elif event.key == "k":
-            self.query_one(SingleHighlightWidget).end -= 1
         elif event.key == "j":
             self.query_one(SingleHighlightWidget).start += 1
-        elif event.key == "l":
-            self.query_one(SingleHighlightWidget).end += 1
+        elif event.key == "H":
+            self.query_one(SingleHighlightWidget).start -= 50
         elif event.key == "J":
             self.query_one(SingleHighlightWidget).start += 50
+        elif event.key == "k":
+            self.query_one(SingleHighlightWidget).end -= 1
         elif event.key == "K":
+            self.query_one(SingleHighlightWidget).end -= 50 
+        elif event.key == "l":
+            self.query_one(SingleHighlightWidget).end += 1
+        elif event.key == "L":
             self.query_one(SingleHighlightWidget).end += 50
         elif event.key == "b":
             self.query_one(SingleHighlightWidget).early_context += 50
-        elif event.key == "f":
-            self.query_one(SingleHighlightWidget).later_context += 50
         elif event.key == "B":
             self.query_one(SingleHighlightWidget).early_context -= 50
+        elif event.key == "f":
+            self.query_one(SingleHighlightWidget).later_context += 50
         elif event.key == "F":
             self.query_one(SingleHighlightWidget).later_context -= 50
 

@@ -6,7 +6,7 @@ from datetime import datetime
 
 ### DATABASE
 
-TIDDLERS_PATH = '/users/alexj/paogarden/tiddlers/'
+TIDDLERS_PATH = '/home/apinto/paogarden/tiddlers/'
 SQLITE_DB_PATH = "./"
 SQLITE_DB_NAME = "test_kobo_db.sqlite"
 EXISTING_IDS_FILE = "kobo highlight ids of quotes.tid"
@@ -63,12 +63,16 @@ def get_highlight_from_database(
     WHERE
     BookmarkID="{highlight_id}"
     """)
+    # 240106: there was a bug in matching certain quotes;
+    # it was due to `quote_to_expand` being preceded by whitespace.
+    # the `.strip()` seems to be a fix.
     content = c.fetchall()[0]
     fixed_path = content[4].split('/')[-1]
-    content = tuple(list(content[:4]) + [fixed_path])
+    content = list(content[:4]) + [fixed_path]
     if fixed_path[-5:] != '.epub':
-        raise FileNotFoundError 
+        raise FileNotFoundError
     conn.close()
+    content[1] = content[1].strip()
     return content
 
 
@@ -123,6 +127,7 @@ def expand_quote(
     backwards: bool,
     cons: int = 200
         ) -> str:
+    quote_to_expand = quote_to_expand
     start_index = context.find(quote_to_expand[:-1])
     if start_index == -1:
         # NOTE THIS IS JUST A QUICKFIX
@@ -167,6 +172,7 @@ def get_context_indices_for_highlight_display(
         context: str,
         highlight: str
         ):
+    highlight = highlight
     start_index = context.find(highlight)
     end_index = start_index + len(highlight)
     return start_index, end_index

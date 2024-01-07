@@ -37,7 +37,7 @@ class TestingKoboDatabase(unittest.TestCase):
     def test_can_retrieve_jane_eyre_highlight_content_from_ID(self):
         rows = get_highlight_from_database("94ace0c6-b132-48b1-b0d9-1ef0e38db1ed")
         self.assertEqual(rows[0], 'Jane Eyre: An Autobiography')
-        self.assertEqual(rows[1], '\nI had made no noise: he had not eyes behind—could his shadow feel?')
+        self.assertEqual(rows[1], 'I had made no noise: he had not eyes behind—could his shadow feel?')
         self.assertEqual(rows[2], '2023-08-30T18:09:48.000')
         self.assertEqual(rows[3], 'OEBPS/6048514455528670785_1260-h-25.htm.html#point(/1/4/1/21:1)')
         self.assertEqual(rows[4], 'jane-eyre.epub')
@@ -118,7 +118,6 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         self.assertNotEqual(soup, None)
         res = expand_quote(highlight, soup, False)
         start, end = get_context_indices_for_highlight_display(soup, highlight)
-        print(start, end)
         self.assertNotEqual(res, None)
 
 
@@ -160,11 +159,7 @@ quote-order: 01
 {highlight}
 <<<
 """
-        self.assertEqual(tiddler,result) 
-
-
-
-    
+        self.assertEqual(tiddler, result)
 
 
 if __name__ == '__main__':
