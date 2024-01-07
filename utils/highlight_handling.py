@@ -4,6 +4,10 @@ import re
 from utils.const import (
     BOOKS_DIR
     )
+from utils.database import (
+    get_highlight_from_database,
+
+)
 
 
 # provides the full content of the .html file
@@ -132,3 +136,13 @@ def get_context_indices_for_highlight_display(
     start_index = context.find(highlight)
     end_index = start_index + len(highlight)
     return start_index, end_index
+
+
+def get_highlight_context_from_id(
+        highlight_id: str,
+        ) -> list[str]:
+    title, highlight, _, section, book_path = (
+            get_highlight_from_database(highlight_id))
+    soup = get_full_context_from_highlight(book_path, section.split('#')[0])
+    paragraphs = get_start_and_end_of_highlight(soup, highlight)
+    return paragraphs
