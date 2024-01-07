@@ -25,6 +25,7 @@ from datetime import datetime
 
 BOOKS_PATH = "/home/apinto/books/"
 PAOGARDEN_PATH = "/home/apinto/paogarden/tiddlers/"
+DATABASE_PATH = "./test_kobo_db.sqlite"
 
 
 class MainScreen(App[None]):
@@ -35,14 +36,13 @@ class MainScreen(App[None]):
 
     def compose(self) -> ComposeResult:
         books = [Option(f'{title} by {author}', id=title) for title, author, _
-                 in get_list_of_highlighted_books('./test_kobo_db.sqlite')]
+                 in get_list_of_highlighted_books(DATABASE_PATH)]
 
         # Store the OptionList instance as an attribute
         self.option_list = OptionList(*books)
         yield Header()
         yield self.option_list  # Yield the stored OptionList instance
         yield Footer()
-
 
     def on_key(self, event: events.Key) -> None:
         # NOTE maybe some enums / different types (instead of 
@@ -65,22 +65,27 @@ class MainScreen(App[None]):
 
 class BookHighlightsWidget(Screen):
     """Screen responsible for displaying each books' highlights"""
+
     def __init__(self, name: str, selected_option: Option) -> None:
         super().__init__(name)
         self.book = selected_option.id
 
     @staticmethod
-    def highlight_generator(highlight: str, date: str, highlight_id: str) -> Table:
+    def highlight_generator(
+            highlight: str,
+            date: str,
+            highlight_id: str) -> Table:
         table = Table(show_header=False)
         table.add_row(date.split('T')[0] + ' | ' +
                       str('✅' if record_in_highlight_id(highlight_id)
-                           else '❌'))
+                          else '❌'))
         table.add_row(highlight.strip())
         return Option(table, id=highlight_id)
 
     def compose(self) -> ComposeResult:
-        highlights = [self.highlight_generator(*highlight_info) for highlight_info 
-                 in get_all_highlights_of_book_from_database(self.book)]
+        highlights = [self.highlight_generator(*highlight_info)
+                      for highlight_info
+                      in get_all_highlights_of_book_from_database(self.book)]
         # Store the OptionList instance as an attribute
         self.option_list = OptionList(*highlights)
         yield Header()
@@ -145,19 +150,19 @@ class SingleHighlightsScreen(Screen):
         start, end = get_context_indices_for_highlight_display(soup, highlight)
         self.highlight_widget = SingleHighlightWidget(self.highlight, soup, start, end)
 
-        self.highlight_notes =  Input(classes='highlight_input',
-                    placeholder='further notes about the quote?')
+        self.highlight_notes = Input(classes='highlight_input',
+                                     placeholder='further notes about the quote?')
         self.highlight_title = Input(classes='highlight_input',
-                    placeholder='title for the quote tiddler?')
+                                     placeholder='title for the quote tiddler?')
         self.highlight_tags = Input(classes='highlight_input',
-                    placeholder='space separated tags?')
-        yield self.highlight_widget       
+                                    placeholder='space separated tags?')
+        yield self.highlight_widget
         yield self.highlight_title
         yield self.highlight_notes
         yield self.highlight_tags
         yield Header()
         yield Footer()
-        yield Button("Create tiddler!", 
+        yield Button("Create tiddler!",
                      variant="success")
 
     def on_key(self, event: events.Key) -> None:
@@ -174,7 +179,7 @@ class SingleHighlightsScreen(Screen):
         elif event.key == "k":
             self.query_one(SingleHighlightWidget).end -= 1
         elif event.key == "K":
-            self.query_one(SingleHighlightWidget).end -= 50 
+            self.query_one(SingleHighlightWidget).end -= 50
         elif event.key == "l":
             self.query_one(SingleHighlightWidget).end += 1
         elif event.key == "L":
@@ -216,7 +221,6 @@ class SingleHighlightsScreen(Screen):
         # Writes the new tiddler file
         with open(PAOGARDEN_PATH + self.highlight_title.value + '.tid', "w") as file:
             file.write(tiddler)
-
 
         add_highlight_id_to_record(self.highlight.id)
 
