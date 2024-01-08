@@ -145,25 +145,25 @@ In the face of the increasingly materialist and pragmatic orientation of our age
     def test_can_extend_quote_forwards_until_next_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
         FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
-        FULL_QUOTE = " ".join([FIRST_FOUND_QUOTE,
-                               """This brings us to our last point about energy: it can be converted among its many forms—kinetic energy, heat, work, chemical energy, and so on—but it can never be lost."""])
         title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         found_highlight = get_start_and_end_of_highlight(soup, PARTIAL_QUOTE)
         self.assertEqual(" ".join(found_highlight), FIRST_FOUND_QUOTE)
         expanded_highlight = expand_found_highlight(found_highlight, soup, 1, False)
-        self.assertEqual(" ".join(expanded_highlight), FULL_QUOTE)
+        FULL_QUOTE = " ".join([FIRST_FOUND_QUOTE,
+                               """This brings us to our last point about energy: it can be converted among its many forms—kinetic energy, heat, work, chemical energy, and so on—but it can never be lost."""])
+        self.assertEqual(" ".join([FIRST_FOUND_QUOTE, " ".join(expanded_highlight)]), FULL_QUOTE)
 
     def test_can_extend_quote_backwards_until_next_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
-        FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
-        FULL_QUOTE = " ".join(["""The bonds that hold molecules together can store chemical energy, which gets released when the molecules break apart.""", FIRST_FOUND_QUOTE])
         title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         found_highlight = get_start_and_end_of_highlight(soup, PARTIAL_QUOTE)
+        FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
         self.assertEqual(" ".join(found_highlight), FIRST_FOUND_QUOTE)
         expanded_highlight = expand_found_highlight(found_highlight, soup, 1, True)
-        self.assertEqual(" ".join(expanded_highlight), FULL_QUOTE)
+        FULL_QUOTE = " ".join(["""The bonds that hold molecules together can store chemical energy, which gets released when the molecules break apart.""", FIRST_FOUND_QUOTE])
+        self.assertEqual(" ".join([" ".join(expanded_highlight), FIRST_FOUND_QUOTE]), FULL_QUOTE)
 
     # highlight is well-formed, but ends with a single stray word.
     # eg: "Well-formed highlight. But then. Oops"
