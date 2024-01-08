@@ -1,6 +1,9 @@
 from bs4 import BeautifulSoup
 from ebooklib import epub
 import re
+from utils.const import (
+        BOOKS_DIR
+        )
 from utils.database import (
     get_highlight_from_database,
 
@@ -152,6 +155,6 @@ def get_highlight_context_from_id(
         ) -> list[str]:
     title, highlight, _, section, book_path = (
             get_highlight_from_database(highlight_id))
-    soup = get_full_context_from_highlight(book_path, section.split('#')[0])
+    soup = get_full_context_from_highlight(BOOKS_DIR + book_path, section.split('#')[0])
     paragraphs = get_start_and_end_of_highlight(soup, highlight)
     return paragraphs

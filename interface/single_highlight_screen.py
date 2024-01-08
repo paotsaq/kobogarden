@@ -12,6 +12,7 @@ from rich.text import Text
 from utils.const import (
     OPTIONS_CSS_PATH,
     TIDDLERS_PATH,
+    BOOKS_DIR
         )
 from utils.database import (
         get_highlight_from_database,
@@ -27,7 +28,8 @@ from utils.highlight_handling import (
         get_full_context_from_highlight,
         get_context_indices_for_highlight_display,
         get_start_and_end_of_highlight,
-        get_highlight_context_from_id
+        get_highlight_context_from_id,
+        expand_found_highlight
         )
 
 
@@ -93,23 +95,31 @@ class SingleHighlightWidget(
     }
     """
 
-    def __init__(self, book_name: str, highlight: Option) -> None:
+    def __init__(self, option: Option) -> None:
         super().__init__()
-        self.book_name = book_name
-        self.highlight = highlight
-        self.highlight_id = highlight.id
+        self.book_name = option[0]
+        self.highlight = option[1]
+        self.highlight_id = option[1].id
+        _, _, _, section, book_path = get_highlight_from_database(self.highlight_id)
+        self.soup = get_full_context_from_highlight(BOOKS_DIR + book_path,
+                                                    section.split('#')[0])
         self.styles.background = "purple"
         # self.styles.width = "60%"
         # self.styles.height = '80%'
         # self.styles.padding = 2
 
     def render(self) -> Text:
+        # start with the minimum possible quote (minimum amount of sentences
+        # that enclose the kobo highlight)
+        enclosed_highlight = get_highlight_context_from_id(self.highlight_id)
+        self.quote = " ".join(enclosed_highlight)
+        # get previous and posterior context
+        before = " ".join(expand_found_highlight(enclosed_highlight, self.soup, 1, True))
+        after = " ".join(expand_found_highlight(enclosed_highlight, self.soup, 1, False))
         text = Text()
-        self.quote = 3 * get_highlight_context_from_id(self.highlight_id)
-        # text.append(f"...{self.soup[self.early_context:self.start].strip()}", style='#828282')
-        # text.append(f" {self.soup[self.start:self.end].strip()} ", style='bold')
-        # text.append(f"{self.soup[self.end:self.later_context].strip()}...", style='#828282')
-        text.append(self.quote)
+        text.append(f"...{before}", style='#828282')
+        text.append(f"{self.quote}", style='bold')
+        text.append(f"{after}...", style='#828282')
         return text
 
     def on_key(self, event: events.Key) -> None:
@@ -143,23 +153,22 @@ class SingleHighlightWidget(
 
 class SingleHighlightsScreen(Screen):
 
-    CSS = """
+    CSS="""
     #display, #controls {
         width: 1fr;
         margin: 2;
     }
     """
 
-    def __init__(self, name: str, content: tuple[str, Option]) -> None:
+    def __init__(self, name: str, highlight: tuple[str, Option]) -> None:
         super().__init__(name)
-        self.content = content
-        self.styles.layout = 'horizontal'
+        self.highlight=highlight
+        self.styles.layout='horizontal'
 
     def compose(self) -> ComposeResult:
-        with VerticalScroll(id="display"):
-            yield SingleHighlightWidget(*self.content)
-        with Vertical(id="controls"):
-            yield TiddlerInformationWidget(*self.content)
+        with VerticalScroll(id = "display"):
+            yield SingleHighlightWidget(self.highlight)
+        with Vertical(id = "controls"):
+            yield TiddlerInformationWidget("TEST", self.highlight)
         yield Header()
         yield Footer()
-
