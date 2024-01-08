@@ -82,33 +82,21 @@ class TestingKoboDatabase(unittest.TestCase):
 # if there is an exact quote, the `get_full_context_from_highlight`
 # can provide a full quote
 class TestingFindingQuoteInEpubFiles(unittest.TestCase):
-    # the highlight was just part of a sentence
-    # it should retrieve the whole sentence
-    def test_can_find_part_of_a_single_sentence(self):
-        PARTIAL_QUOTE = 'relationship between the gate and the all-important circulation of traffic sparked another'
-        FULL_QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate.'
-        title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
-        soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BERLIN, 'text/part0011.html')
-        self.assertIsNotNone(soup)
-        result = " ".join(get_start_and_end_of_highlight(soup, PARTIAL_QUOTE))
-        self.assertEqual(result, FULL_QUOTE)
 
     # the highlight is well-delimited (no partial sentences before or after).
     def test_can_find_simple_full_quote_in_epub_file(self):
         QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate.'
-        FULL_QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate.'
-        self.assertEqual(QUOTE, FULL_QUOTE)
         title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BERLIN, 'text/part0011.html')
         self.assertIsNotNone(soup)
         result = " ".join(get_start_and_end_of_highlight(soup, QUOTE))
-        self.assertEqual(result, FULL_QUOTE)
+        self.assertEqual(result, QUOTE)
 
     # the highlight is partial at the beginning.
     # in this case, the first sentence is presented in its complete form.
     def test_can_extend_quote_backwards_until_period(self):
-        PARTIAL_QUOTE = """fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction."""
-        FULL_QUOTE = """Our modern food production system violates the fundamental laws of ecology. When we include the fossil fuel energy consumed in food production, we burn 8 calories for every calorie of food we produce. That’s not a great recipe for avoiding extinction."""
+        PARTIAL_QUOTE = """fundamental laws of ecology."""
+        FULL_QUOTE = """Our modern food production system violates the fundamental laws of ecology."""
         title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
         # NOTE: the OEBPS/ must be ommited - not sure why!
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
@@ -127,7 +115,8 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         self.assertEqual(result, FULL_QUOTE)
 
     # the highlight is partial at the beginning and end.
-    # in this case, both sentences are presented in its complete form.
+    # in this case, both beginning and end are retrieved.
+    # sentence is now in its complete form
     def test_can_extend_quote_forwards_and_backwards_until_period(self):
         PARTIAL_QUOTE = """pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
         FULL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
@@ -148,9 +137,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         title, highlight, _, section, book_path = get_highlight_from_database("b22af57c-2b8c-494f-ac99-96fa698f1dac")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
         paragraphs = get_start_and_end_of_highlight(soup, highlight)
-        text = reduce(lambda x, y: x + y,
-                      paragraphs)
-        self.assertEqual(text, FULL_QUOTE)
+        self.assertEqual("".join(paragraphs), FULL_QUOTE)
 
     def test_can_get_quote_across_multiple_paragraphs(self):
         self.assertEqual(1, 0)
@@ -165,6 +152,17 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         found_highlight = get_start_and_end_of_highlight(soup, PARTIAL_QUOTE)
         self.assertEqual(" ".join(found_highlight), FIRST_FOUND_QUOTE)
         expanded_highlight = expand_found_highlight(found_highlight, soup, 1, False)
+        self.assertEqual(" ".join(expanded_highlight), FULL_QUOTE)
+
+    def test_can_extend_quote_backwards_until_next_period(self):
+        PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
+        FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
+        FULL_QUOTE = " ".join(["""The bonds that hold molecules together can store chemical energy, which gets released when the molecules break apart.""", FIRST_FOUND_QUOTE])
+        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
+        found_highlight = get_start_and_end_of_highlight(soup, PARTIAL_QUOTE)
+        self.assertEqual(" ".join(found_highlight), FIRST_FOUND_QUOTE)
+        expanded_highlight = expand_found_highlight(found_highlight, soup, 1, True)
         self.assertEqual(" ".join(expanded_highlight), FULL_QUOTE)
 
     # highlight is well-formed, but ends with a single stray word.
