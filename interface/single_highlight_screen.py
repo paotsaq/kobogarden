@@ -5,6 +5,7 @@ from textual.widgets import Footer, Header, Input, Button
 from textual import events
 from textual.screen import Screen
 from textual.reactive import reactive
+from textual.containers import VerticalScroll, Vertical
 from textual.widgets.option_list import Option
 from rich.table import Table
 from rich.text import Text
@@ -80,12 +81,17 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         # add_highlight_id_to_record(self.highlight.id)
 
 
-class SingleHighlightWidget(Widget, can_focus=True):
-    start = reactive(0)
-    end = reactive(0)
-    early_context = reactive(0)
-    later_context = reactive(0)
-    quote = reactive("")
+class SingleHighlightWidget(
+        Widget,
+        can_focus=True):
+
+    quote = reactive("", layout=True)
+
+    DEFAULT_CSS = """
+    SingleHighlightWidget {
+        height: auto;
+    }
+    """
 
     def __init__(self, book_name: str, highlight: Option) -> None:
         super().__init__()
@@ -93,36 +99,18 @@ class SingleHighlightWidget(Widget, can_focus=True):
         self.highlight = highlight
         self.highlight_id = highlight.id
         self.styles.background = "purple"
-        self.styles.width = "60%"
-        self.styles.height = "80%"
-        self.styles.padding = 2
+        # self.styles.width = "60%"
+        # self.styles.height = '80%'
+        # self.styles.padding = 2
 
     def render(self) -> Text:
         text = Text()
-        self.quote = get_highlight_context_from_id(self.highlight_id)
+        self.quote = 3 * get_highlight_context_from_id(self.highlight_id)
         # text.append(f"...{self.soup[self.early_context:self.start].strip()}", style='#828282')
         # text.append(f" {self.soup[self.start:self.end].strip()} ", style='bold')
         # text.append(f"{self.soup[self.end:self.later_context].strip()}...", style='#828282')
         text.append(self.quote)
         return text
-
-
-class SingleHighlightsScreen(Screen):
-    CSS_PATH = OPTIONS_CSS_PATH
-
-    def __init__(self, name: str, content: tuple[str, Option]) -> None:
-        super().__init__(name)
-        self.content = content
-        self.styles.layout = 'horizontal'
-
-    def compose(self) -> ComposeResult:
-        self.highlight_widget = SingleHighlightWidget(*self.content)
-        self.tiddler_info_widget = TiddlerInformationWidget(*self.content)
-
-        yield self.highlight_widget
-        yield self.tiddler_info_widget
-        yield Header()
-        yield Footer()
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "q":
@@ -151,4 +139,27 @@ class SingleHighlightsScreen(Screen):
             self.query_one(SingleHighlightWidget).later_context += 50
         elif event.key == "F":
             self.query_one(SingleHighlightWidget).later_context -= 50
+
+
+class SingleHighlightsScreen(Screen):
+
+    CSS = """
+    #display, #controls {
+        width: 1fr;
+        margin: 2;
+    }
+    """
+
+    def __init__(self, name: str, content: tuple[str, Option]) -> None:
+        super().__init__(name)
+        self.content = content
+        self.styles.layout = 'horizontal'
+
+    def compose(self) -> ComposeResult:
+        with VerticalScroll(id="display"):
+            yield SingleHighlightWidget(*self.content)
+        with Vertical(id="controls"):
+            yield TiddlerInformationWidget(*self.content)
+        yield Header()
+        yield Footer()
 
