@@ -125,6 +125,8 @@ def get_start_and_end_of_highlight(
         return (book_sentences[start_index:end_index + 1])
 
 
+# the function provides more context for a given highlight.
+# it will return `amount_of_sentences` before or after the highlight
 def expand_found_highlight(
     highlight_to_expand: list[str],
     soup: list[str],
@@ -132,12 +134,12 @@ def expand_found_highlight(
     backwards: bool,
         ) -> list[str]:
     # decide whether to look for first or last sentence of highlight
-    anchor = -1 if backwards else 0
+    anchor = 0 if backwards else -1
     broken_soup = break_string_into_list_of_sentences(soup)
     highlight_location = broken_soup.index(highlight_to_expand[anchor])
-    return ([broken_soup[highlight_location - amount_of_sentences]] + highlight_to_expand
+    return (broken_soup[highlight_location - amount_of_sentences:highlight_location]
             if backwards
-            else highlight_to_expand + [broken_soup[highlight_location + amount_of_sentences]])
+            else broken_soup[highlight_location + 1:highlight_location + 1 + amount_of_sentences])
 
 
 def get_context_indices_for_highlight_display(
