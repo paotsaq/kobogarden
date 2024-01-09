@@ -40,7 +40,7 @@ def get_book_sentence_that_matches_highlight(
         book_sentences: list[str]
         ) -> int:
     # NOTE this is still a very naive method ('x' in 'xyz')
-    start_index, _ = next(filter(lambda enum_tuple: h in enum_tuple[1],
+    start_index, sentence = next(filter(lambda enum_tuple: h in enum_tuple[1],
                                  enumerate(book_sentences)))
     return start_index
 
@@ -48,7 +48,7 @@ def get_book_sentence_that_matches_highlight(
 def break_string_into_list_of_sentences(string: str):
     # pattern to break a string (soup or highlight) into a list of sentences,
     # using the period ('.') as delimiter.
-    pattern = r"(?<=\.)\s*(?=\w)"
+    pattern = r"(?<=[.!?])\s*(?=•|\w)"
     return re.split(pattern, string)
 
 
@@ -77,6 +77,10 @@ def get_start_and_end_of_highlight(
                                           # re.split(pattern, highlight))))
 
     highlight_sentences = break_string_into_list_of_sentences(highlight)
+    # NOTE I feel something could be done here
+    if len(highlight_sentences) == 1:
+        pass
+
     start_of_highlight = highlight_sentences[0]
 
     # NOTE highlight might in a single word. check tests for
@@ -89,12 +93,14 @@ def get_start_and_end_of_highlight(
         end_of_highlight = highlight_sentences[-2]
 
     # NOTE shouldn't soup be passed to break_string_into_list_of_sentences instead?
+    # broken_soup = break_string_into_list_of_sentences(soup)
+    broken_soup = soup.splitlines()
     [start_paragraph_index, start_paragraph] = (
             get_index_of_sentence_in_sentences_list(start_of_highlight,
-                                                    soup.splitlines()))
+                                                    broken_soup))
     [end_paragraph_index, end_paragraph] = (
             get_index_of_sentence_in_sentences_list(end_of_highlight,
-                                                    soup.splitlines()))
+                                                    broken_soup))
 
     if (end_paragraph_index < start_paragraph_index):
         # something went terribly wrong; communicate the error
