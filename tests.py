@@ -14,7 +14,8 @@ from utils.tiddler_handling import (
 from utils.highlight_handling import (
         get_full_context_from_highlight,
         get_start_and_end_of_highlight,
-        expand_found_highlight
+        expand_found_highlight,
+        break_string_into_list_of_sentences
         )
 from utils.const import (
     SQLITE_DB_PATH,
@@ -92,6 +93,17 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         result = " ".join(get_start_and_end_of_highlight(soup, QUOTE))
         self.assertEqual(result, QUOTE)
 
+    # the highlight is well-delimited (no partial sentences before or after),
+    # but ends in a question mark.
+    def test_can_find_simple_full_quote_in_epub_file_with_punctuation(self):
+        HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
+        QUOTE = """When people long for some kind of escape, it’s worth asking: What would “back to the land” mean if we understood the land to be where we are right now?"""
+        title, highlight, _, section, _ = get_highlight_from_database(HIGHLIGHT_ID)
+        soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
+        self.assertIsNotNone(soup)
+        result = " ".join(get_start_and_end_of_highlight(soup, QUOTE))
+        self.assertEqual(result, QUOTE)
+        
     # the highlight is partial at the beginning.
     # in this case, the first sentence is presented in its complete form.
     def test_can_extend_quote_backwards_until_period(self):
@@ -179,6 +191,18 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         result = " ".join(get_start_and_end_of_highlight(soup, highlight))
         self.assertEqual(result, FULL_QUOTE)
 
+
+    def test_weird_symbols_in_quote(self):
+        HIGHLIGHT_ID = "f96e9093-fd56-400c-93f6-102c4ade243f"
+        title, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
+        soup = get_full_context_from_highlight(TEST_BOOKS_DIR + 'trip.epub',
+                                               section.split('#')[0])
+        self.assertNotEqual(soup, None)
+        result = " ".join(get_start_and_end_of_highlight(soup, highlight))
+        self.assertEqual(result, """• For reasons examined throughout this book, I’ve gradually realized that sustained, conscious effort is required—or at least strongly self-suggested—for me to not drift toward meaninglessness, depression, disempowering forms of resignation, and bleak ideologies like existentialism.""")
+        broken_soup = break_string_into_list_of_sentences(soup)
+        s = "I want to explain why.\n• For reasons examined throughout this book, I’ve gradually realized that sustained, conscious effort is required—or at least strongly self-suggested—for me to not drift toward meaninglessness, depression, disempowering forms of resignation, and bleak ideologies like existentialism."
+        print(s in broken_soup)
 
 class TestingCreationOfHighlightTiddler(unittest.TestCase):
 
