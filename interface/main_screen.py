@@ -39,13 +39,15 @@ class MainScreen(App[None]):
             """Helper function to determine outcomes of different screens"""
             next_screen, content = options
             if next_screen == 'H':
-                self.push_screen(SingleHighlightsScreen("panel", content))
-            elif next_screen == 'C':
-                self.push_screen(ConfirmHighlightScreen("confirm", *content))
+                self.push_screen(SingleHighlightsScreen("single_highlight", content))
+            # move from specific highlight to book highlights screen
+            elif next_screen == 'B':
+                self.push_screen(BookHighlightsScreen("book_highlights", content),
+                                 check_highlights_panel_quit)
 
         # a book has been chosen on the main panel
         if event.key == "enter":
             selected_option_index = self.option_list.highlighted
             selected_option = self.option_list._options[selected_option_index]
-            self.push_screen(BookHighlightsScreen("panel", selected_option),
+            self.push_screen(BookHighlightsScreen("book_highlights", selected_option),
                              check_highlights_panel_quit)

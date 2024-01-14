@@ -98,7 +98,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     def test_can_find_simple_full_quote_in_epub_file_with_punctuation(self):
         HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
         QUOTE = """When people long for some kind of escape, it’s worth asking: What would “back to the land” mean if we understood the land to be where we are right now?"""
-        title, highlight, _, section, _ = get_highlight_from_database(HIGHLIGHT_ID)
+        title, highlight, _, section, _ = (x := get_highlight_from_database(HIGHLIGHT_ID))
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
         self.assertIsNotNone(soup)
         result = " ".join(get_start_and_end_of_highlight(soup, QUOTE))
@@ -148,8 +148,8 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
 In the face of the increasingly materialist and pragmatic orientation of our age…it would not be eccentric in the future to contemplate a society in which those who live for the pleasures of the mind will no longer have the right to demand their place in the sun. The writer, the thinker, the dreamer, the poet, the metaphysician, the observer…he who tries to solve a riddle or to pass judgement will become an anachronistic figure, destined to disappear from the face of the earth like the ichthyosaur and the mammoth."""
         title, highlight, _, section, book_path = get_highlight_from_database("b22af57c-2b8c-494f-ac99-96fa698f1dac")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
-        paragraphs = get_start_and_end_of_highlight(soup, highlight)
-        self.assertEqual("".join(paragraphs), FULL_QUOTE)
+        result = get_start_and_end_of_highlight(soup, highlight)
+        self.assertEqual(" ".join(result), FULL_QUOTE)
 
     def test_can_get_quote_across_multiple_paragraphs(self):
         self.assertEqual(1, 0)
@@ -188,7 +188,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         title, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_SCATTERED, section.split('#')[0])
         self.assertNotEqual(soup, None)
-        result = " ".join(get_start_and_end_of_highlight(soup, highlight))
+        result = " ".join(r := get_start_and_end_of_highlight(soup, highlight))
         self.assertEqual(result, FULL_QUOTE)
 
 
@@ -203,6 +203,32 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         broken_soup = break_string_into_list_of_sentences(soup)
         s = "I want to explain why.\n• For reasons examined throughout this book, I’ve gradually realized that sustained, conscious effort is required—or at least strongly self-suggested—for me to not drift toward meaninglessness, depression, disempowering forms of resignation, and bleak ideologies like existentialism."
         print(s in broken_soup)
+        self.assertEqual(0, 1)
+
+
+class TestingManipulationOfHighlights(unittest.TestCase):
+
+    def test_can_get_start_and_end_of_highlight(self):
+        HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
+        QUOTE = """When people long for some kind of escape, it’s worth asking: What would “back to the land” mean if we understood the land to be where we are right now?"""
+        title, highlight, _, section, _ = get_highlight_from_database(HIGHLIGHT_ID)
+        soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
+        self.assertIsNotNone(soup)
+        fetched_highlight = get_start_and_end_of_highlight(soup, QUOTE)
+        self.assertEqual(" ".join(fetched_highlight), QUOTE)
+        print(fetched_highlight)
+        before = expand_found_highlight(fetched_highlight, soup, 1, True)
+        print(before)
+        new_highlight = before + fetched_highlight
+        new_before = expand_found_highlight(new_highlight, soup, 1, True)
+        print(new_highlight)
+        print(new_before)
+        newer_before = new_highlight[0]
+        print(newer_before)
+        newer_highlight = new_highlight[1:]
+        print(newer_highlight)
+
+
 
 class TestingCreationOfHighlightTiddler(unittest.TestCase):
 

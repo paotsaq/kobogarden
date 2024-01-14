@@ -17,6 +17,7 @@ class BookHighlightsScreen(Screen):
 
     def __init__(self, name: str, selected_option: Option) -> None:
         super().__init__(name)
+        self.contents_for_dismiss = [name, selected_option]
         self.book = selected_option.id
 
     @staticmethod
