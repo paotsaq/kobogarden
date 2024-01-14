@@ -34,12 +34,12 @@ def get_all_highlights_of_book_from_database(
     return content
 
 
+# returns a list with
+# title of book, full highlight content, date of highlight,
+# start of highlight, epub file name"""
 def get_highlight_from_database(
         highlight_id: str
         ) -> list[str]:
-    """returns a list with
-    title of book, full highlight content, date of highlight,
-    start of highlight, end of highlight"""
     conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
     c = conn.cursor()
     c.execute(f"""

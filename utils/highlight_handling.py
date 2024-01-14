@@ -35,14 +35,14 @@ def get_full_context_from_highlight(
 
 
 # gets the paragraph that contains a sentence.
-def get_book_sentence_that_matches_highlight(
+def get_index_of_sentence_in_sentences_list(
         h: str,
         book_sentences: list[str]
         ) -> int:
     # NOTE this is still a very naive method ('x' in 'xyz')
     start_index, sentence = next(filter(lambda enum_tuple: h in enum_tuple[1],
                                  enumerate(book_sentences)))
-    return start_index
+    return start_index, sentence
 
 
 def break_string_into_list_of_sentences(string: str):
@@ -50,14 +50,6 @@ def break_string_into_list_of_sentences(string: str):
     # using the period ('.') as delimiter.
     pattern = r"(?<=[.!?])\s*(?=•|\w)"
     return re.split(pattern, string)
-
-
-def get_index_of_sentence_in_sentences_list(
-        sentence: str,
-        sentences: list[str]
-        ):
-    return next(filter(lambda enum_tuple: sentence in enum_tuple[1],
-                       enumerate(sentences)))
 
 
 # NOTE the soup is the whole context of the quote.
@@ -70,13 +62,8 @@ def get_start_and_end_of_highlight(
         highlight: str
         ) -> list[str]:
 
-    # NOTE is this still needed?
-    # # removes whitespace and newlines
-    # highlight_sentences = list(filter(lambda s: s != '',
-                                      # map(lambda s: s.strip(),
-                                          # re.split(pattern, highlight))))
-
     highlight_sentences = break_string_into_list_of_sentences(highlight)
+    broken_soup = break_string_into_list_of_sentences(soup)
     # NOTE I feel something could be done here
     if len(highlight_sentences) == 1:
         pass
@@ -92,43 +79,15 @@ def get_start_and_end_of_highlight(
     if len(end_of_highlight.split()) == 1:
         end_of_highlight = highlight_sentences[-2]
 
-    # NOTE shouldn't soup be passed to break_string_into_list_of_sentences instead?
-    # broken_soup = break_string_into_list_of_sentences(soup)
-    broken_soup = soup.splitlines()
-    [start_paragraph_index, start_paragraph] = (
+    [match_start_index, _] = (
             get_index_of_sentence_in_sentences_list(start_of_highlight,
                                                     broken_soup))
-    [end_paragraph_index, end_paragraph] = (
+    [match_end_index, _] = (
             get_index_of_sentence_in_sentences_list(end_of_highlight,
                                                     broken_soup))
 
-    if (end_paragraph_index < start_paragraph_index):
-        # something went terribly wrong; communicate the error
-        raise Exception("end_paragraph_index < start_paragraph_index")
+    return broken_soup[match_start_index:match_end_index + 1]
 
-    # more than one paragraph
-    if start_paragraph_index != end_paragraph_index:
-        start_book_sentences = break_string_into_list_of_sentences(start_paragraph)
-        start_index = get_book_sentence_that_matches_highlight(start_of_highlight,
-                                                               start_book_sentences)
-        end_book_sentences = break_string_into_list_of_sentences(end_paragraph)
-        end_index = get_book_sentence_that_matches_highlight(end_of_highlight,
-                                                             end_book_sentences)
-        # concatenate the start_of_highlight paragraph,
-        # any paragraphs in between,
-        # and then the end_of_highlight paragraph
-        return ([" ".join(start_book_sentences[start_index:]),
-                 "\n\n",
-                 # middle_book_paragraphs,
-                 " ".join(end_book_sentences[:end_index + 1])])
-
-    else:
-        book_sentences = break_string_into_list_of_sentences(start_paragraph)
-        start_index = get_book_sentence_that_matches_highlight(start_of_highlight,
-                                                               book_sentences)
-        end_index = get_book_sentence_that_matches_highlight(end_of_highlight,
-                                                             book_sentences)
-        return (book_sentences[start_index:end_index + 1])
 
 
 # the function provides more context for a given highlight.

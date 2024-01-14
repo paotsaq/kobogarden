@@ -88,10 +88,13 @@ class SingleHighlightWidget(
         can_focus=True):
 
     quote = reactive("", layout=True)
+    before = reactive("", layout=True)
+    after = reactive("", layout=True)
 
     DEFAULT_CSS = """
     SingleHighlightWidget {
         height: auto;
+        padding: 2;
     }
     """
 
@@ -104,55 +107,38 @@ class SingleHighlightWidget(
         self.soup = get_full_context_from_highlight(BOOKS_DIR + book_path,
                                                     section.split('#')[0])
         self.styles.background = "purple"
-        # self.styles.width = "60%"
-        # self.styles.height = '80%'
-        # self.styles.padding = 2
-
-    def render(self) -> Text:
         # start with the minimum possible quote (minimum amount of sentences
         # that enclose the kobo highlight)
         enclosed_highlight = get_highlight_context_from_id(self.highlight_id)
-        self.quote = " ".join(enclosed_highlight)
         # get previous and posterior context
-        before = " ".join(expand_found_highlight(enclosed_highlight, self.soup, 1, True))
-        after = " ".join(expand_found_highlight(enclosed_highlight, self.soup, 1, False))
+        self.quote = enclosed_highlight
+        self.before = expand_found_highlight(enclosed_highlight, self.soup, 1, True)
+        self.after = expand_found_highlight(enclosed_highlight, self.soup, 1, False)
+
+    def render(self) -> Text:
         text = Text()
-        text.append(f"...{before}", style='#828282')
-        text.append(f"{self.quote}", style='bold')
-        text.append(f"{after}...", style='#828282')
+        text.append(f"...{' '.join(self.before)}", style='#828282')
+        text.append(f" {' '.join(self.quote)} ", style='bold')
+        text.append(f"{' '.join(self.after)}...", style='#828282')
         return text
 
-    def on_key(self, event: events.Key) -> None:
-        if event.key == "q":
-            self.dismiss()
-        elif event.key == "h":
-            self.query_one(SingleHighlightWidget).start -= 1
-        elif event.key == "j":
-            self.query_one(SingleHighlightWidget).start += 1
-        elif event.key == "H":
-            self.query_one(SingleHighlightWidget).start -= 50
-        elif event.key == "J":
-            self.query_one(SingleHighlightWidget).start += 50
-        elif event.key == "k":
-            self.query_one(SingleHighlightWidget).end -= 1
-        elif event.key == "K":
-            self.query_one(SingleHighlightWidget).end -= 50
-        elif event.key == "l":
-            self.query_one(SingleHighlightWidget).end += 1
-        elif event.key == "L":
-            self.query_one(SingleHighlightWidget).end += 50
-        elif event.key == "b":
-            self.query_one(SingleHighlightWidget).early_context += 50
-        elif event.key == "B":
-            self.query_one(SingleHighlightWidget).early_context -= 50
-        elif event.key == "f":
-            self.query_one(SingleHighlightWidget).later_context += 50
-        elif event.key == "F":
-            self.query_one(SingleHighlightWidget).later_context -= 50
+    def contract_quote_above(self):
+        self.before = [self.quote[0]]
+        self.quote = self.quote[1:]
 
+    def extend_quote_above(self):
+        self.quote = self.before + self.quote
+        self.before = expand_found_highlight(self.quote, self.soup, 1, True)
+
+    def contract_quote_below(self):
+        self.after = [self.quote[-1]]
+        self.quote = self.quote[:-1]
+
+    def extend_quote_below(self):
+        self.quote = self.quote + self.after
+        self.after = expand_found_highlight(self.quote, self.soup, 1, False)
 
 class SingleHighlightsScreen(Screen):
-
     CSS="""
     #display, #controls {
         width: 1fr;
@@ -162,13 +148,28 @@ class SingleHighlightsScreen(Screen):
 
     def __init__(self, name: str, highlight: tuple[str, Option]) -> None:
         super().__init__(name)
-        self.highlight=highlight
-        self.styles.layout='horizontal'
+        self.highlight = highlight
+        self.styles.layout = 'horizontal'
 
     def compose(self) -> ComposeResult:
-        with VerticalScroll(id = "display"):
+        with VerticalScroll(id="display"):
             yield SingleHighlightWidget(self.highlight)
-        with Vertical(id = "controls"):
-            yield TiddlerInformationWidget("TEST", self.highlight)
+        with Vertical(id="controls"):
+            yield TiddlerInformationWidget("TEST",
+                                           self.highlight)
         yield Header()
         yield Footer()
+
+    def on_key(self, event: events.Key) -> None:
+        # return to the book highlight screen
+        if event.key == "q":
+            # TODO this is not working
+            self.dismiss(['X', self.highlight])
+        if event.key == "b":
+            self.query_one(SingleHighlightWidget).extend_quote_above()
+        if event.key == "B":
+            self.query_one(SingleHighlightWidget).contract_quote_above()
+        if event.key == "f":
+            self.query_one(SingleHighlightWidget).extend_quote_below()
+        if event.key == "F":
+            self.query_one(SingleHighlightWidget).contract_quote_below()
