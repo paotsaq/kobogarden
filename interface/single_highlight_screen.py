@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 from textual.app import ComposeResult
 from textual.widget import Widget
@@ -88,6 +89,8 @@ class SingleHighlightWidget(
         can_focus=True):
 
     quote = reactive("", layout=True)
+    fine_before = reactive("", layout=True)
+    fine_after = reactive("", layout=True)
     before = reactive("", layout=True)
     after = reactive("", layout=True)
 
@@ -112,34 +115,109 @@ class SingleHighlightWidget(
         enclosed_highlight = get_highlight_context_from_id(self.highlight_id)
         # get previous and posterior context
         self.quote = enclosed_highlight
-        self.before = expand_found_highlight(enclosed_highlight, self.soup, 1, True)
-        self.after = expand_found_highlight(enclosed_highlight, self.soup, 1, False)
+        self.before = expand_found_highlight(enclosed_highlight, self.soup, 2, True)
+        self.after = expand_found_highlight(enclosed_highlight, self.soup, 2, False)
 
     def render(self) -> Text:
         text = Text()
         text.append(f"...{' '.join(self.before)}", style='#828282')
-        text.append(f" {' '.join(self.quote)} ", style='bold')
+        text.append('|', style='bold blue')
+        text.append(f"{self.fine_before}", style='bold')
+        text.append(f" {' '.join(self.quote)} " if self.quote else " ", style='bold')
+        text.append(f"{self.fine_after}", style='bold')
+        text.append('|', style='bold red')
         text.append(f"{' '.join(self.after)}...", style='#828282')
         return text
 
-    def contract_quote_above(self):
-        self.before = [self.quote[0]]
-        self.quote = self.quote[1:]
+    def contract_quote_above(self, fine=False):
+        if fine:
+            if self.fine_before != "":
+                skip_space = self.fine_before[0] == " " and self.fine_before[1] != " "
+                self.before[-1] = self.before[-1] + self.fine_before[:int(skip_space) + 1]
+                self.fine_before = self.fine_before[int(skip_space) + 1:]
+            # fine_before takes over the first sentence of quote
+            else:
+                self.before = self.before + [self.quote[0][0]]
+                self.fine_before = self.quote[0][1:]
+                self.quote = self.quote[1:]
+        else:
+            if self.fine_before != "":
+                self.before[-1] = self.before[-1] + self.fine_before.rstrip()
+                self.fine_before = ""
+            else:
+                if len(self.quote) > 0:
+                    self.before = self.before + [self.quote[0]]
+                    self.quote = self.quote[1:]
 
-    def extend_quote_above(self):
-        self.quote = self.before + self.quote
-        self.before = expand_found_highlight(self.quote, self.soup, 1, True)
+    def extend_quote_above(self, fine=False):
+        if fine:
+            # receding finely has exhausted the first sentence before
+            if self.before[-1] == "":
+                self.quote = [self.fine_before.strip()] + self.quote
+                self.fine_before = ""
+                self.before.pop(-1)
+                if len(self.before) == 0:
+                    self.before = expand_found_highlight(self.quote, self.soup, 1, True)
+            # make cursor skip single spaces
+            # NOTE this will crash if there is no before
+            skip_space = self.before[-1][-1] == " " and self.before[-1][-2] != " "
+            self.fine_before = self.before[-1][-1 - int(skip_space):] + self.fine_before
+            self.before = self.before[:-1] + [self.before[-1][:-1 - int(skip_space)]]
+        else:
+            if self.fine_before != "":
+                self.before[-1] = self.before[-1] + self.fine_before.rstrip()
+                self.fine_before = ""
+            self.quote = [self.before[-1]] + self.quote
+            self.before = self.before[:-1]
+            if self.before == []:
+                self.before = expand_found_highlight(self.quote, self.soup, 1, True)
 
-    def contract_quote_below(self):
-        self.after = [self.quote[-1]]
-        self.quote = self.quote[:-1]
+    def contract_quote_below(self, fine=False):
+        if fine:
+            if self.fine_after != "":
+                self.after[0] = self.fine_after[-1] + self.after[0]
+                self.fine_after = self.fine_after[:-1]
+            else:
+                self.after = [self.quote[-1][-1]] + self.after
+                self.fine_after = self.quote[-1][:-1]
+                self.quote = self.quote[:-1]
+        else:
+            if self.fine_after != "":
+                self.after[0] = self.fine_after.lstrip() + self.after[0]
+                self.fine_after = ""
+            else:
+                if len(self.quote) > 0:
+                    self.after = [self.quote[-1]] + self.after
+                    self.quote = self.quote[:-1]
 
-    def extend_quote_below(self):
-        self.quote = self.quote + self.after
-        self.after = expand_found_highlight(self.quote, self.soup, 1, False)
+    def extend_quote_below(self, fine=False):
+        if fine:
+            # advancing finely has exhausted the first sentence after
+            if self.after[0] == "":
+                self.quote = self.quote + [self.fine_after.strip()]
+                self.fine_after = ""
+                self.after.pop(0)
+                if len(self.after) == 0:
+                    self.after = expand_found_highlight(self.quote, self.soup, 1, False)
+            # allows for cursor to skip spaces
+            # NOTE this will crash if there is no self.after
+            skip_space = self.after[0][0] == " " and self.after[0][1] != " "
+            self.fine_after = self.fine_after + self.after[0][:int(skip_space) + 1]
+            self.after = [self.after[0][1 + int(skip_space):]] + self.after[1:]
+        else:
+            if self.fine_after != "":
+                self.after[0] = self.fine_after.lstrip() + self.after[0]
+                self.fine_after = ""
+            self.quote = self.quote + [self.after[0]]
+            self.after = self.after[1:]
+            if self.after == []:
+                self.after = expand_found_highlight(
+                        self.quote,
+                        self.soup, 1, False)
+
 
 class SingleHighlightsScreen(Screen):
-    CSS="""
+    CSS = """
     #display, #controls {
         width: 1fr;
         margin: 2;
@@ -173,3 +251,11 @@ class SingleHighlightsScreen(Screen):
             self.query_one(SingleHighlightWidget).extend_quote_below()
         if event.key == "F":
             self.query_one(SingleHighlightWidget).contract_quote_below()
+        if event.key == "j":
+            self.query_one(SingleHighlightWidget).extend_quote_above(True)
+        if event.key == "J":
+            self.query_one(SingleHighlightWidget).contract_quote_above(True)
+        if event.key == "k":
+            self.query_one(SingleHighlightWidget).extend_quote_below(True)
+        if event.key == "K":
+            self.query_one(SingleHighlightWidget).contract_quote_below(True)

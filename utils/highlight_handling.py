@@ -47,7 +47,7 @@ def get_index_of_sentence_in_sentences_list(
 
 def break_string_into_list_of_sentences(string: str):
     # pattern to break a string (soup or highlight) into a list of sentences,
-    # using the period ('.') as delimiter.
+    # using the period ('.') and other punctiation as delimiter.
     pattern = r"(?<=[.!?])\s*(?=•|\w)"
     return re.split(pattern, string)
 
@@ -87,7 +87,6 @@ def get_start_and_end_of_highlight(
                                                     broken_soup))
 
     return broken_soup[match_start_index:match_end_index + 1]
-
 
 
 # the function provides more context for a given highlight.
