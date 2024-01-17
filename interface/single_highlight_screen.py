@@ -8,10 +8,8 @@ from textual.screen import Screen
 from textual.reactive import reactive
 from textual.containers import VerticalScroll, Vertical
 from textual.widgets.option_list import Option
-from rich.table import Table
 from rich.text import Text
 from utils.const import (
-    OPTIONS_CSS_PATH,
     TIDDLERS_PATH,
     BOOKS_DIR
         )
@@ -27,16 +25,21 @@ from utils.tiddler_handling import (
 )
 from utils.highlight_handling import (
         get_full_context_from_highlight,
-        get_context_indices_for_highlight_display,
-        get_start_and_end_of_highlight,
         get_highlight_context_from_id,
         expand_found_highlight
         )
 
 
 class TiddlerInformationWidget(Widget, can_focus=True):
-    def __init__(self, book_name: str, highlight: Option) -> None:
+
+    def __init__(self,
+                 book_name: str,
+                 highlight_id: int
+                 ) -> None:
         super().__init__()
+        self.book_name = book_name
+        self.edited_quote = ""
+        self.highlight_id = highlight_id
 
     def compose(self) -> ComposeResult:
         self.highlight_notes = Input(classes='highlight_input',
@@ -56,32 +59,31 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         if self.highlight_title.value == "":
             return
 
-        return
-        # # Access or create book tiddler, and retrieve the `highlight_order`
-        # if book_tiddler_exists(self.book):
-            # highlight_order = increment_book_tiddler_highlight_number(self.book)
-        # else:
-            # create_book_tiddler(self.book, "AUTHOR_IS_MISSING")
-            # highlight_order = 1
+        # Access or create book tiddler, and retrieve the `highlight_order`
+        if book_tiddler_exists(self.book_name):
+            highlight_order = increment_book_tiddler_highlight_number(self.book_name)
+        else:
+            create_book_tiddler(self.book_name, "AUTHOR_IS_MISSING")
+            highlight_order = 1
 
-        # # Remove the last 3 digits of microseconds
-        # formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        # Remove the last 3 digits of microseconds
+        formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
 
-        # # Creates the tiddler string
-        # tiddler = produce_highlight_tiddler_string(
-                # formatted_now,
-                # [self.book] + self.highlight_tags.value.split(),
-                # self.highlight_title.value,
-                # self.highlight_notes.value,
-                # self.highlight_widget.quote,
-                # highlight_order
-                # )
+        # Creates the tiddler string
+        tiddler = produce_highlight_tiddler_string(
+                formatted_now,
+                [self.book_name] + self.highlight_tags.value.split(),
+                self.highlight_title.value,
+                self.highlight_notes.value,
+                self.highlight_widget.quote,
+                highlight_order
+                )
 
-        # # Writes the new tiddler file
-        # with open(TIDDLERS_PATH + self.highlight_title.value + '.tid', "w") as file:
-            # file.write(tiddler)
+        # Writes the new tiddler file
+        with open(TIDDLERS_PATH + self.highlight_title.value + '.tid', "w") as file:
+            file.write(tiddler)
 
-        # add_highlight_id_to_record(self.highlight.id)
+        add_highlight_id_to_record(self.highlight.id)
 
 
 class SingleHighlightWidget(
@@ -101,18 +103,16 @@ class SingleHighlightWidget(
     }
     """
 
-    def __init__(self, option: Option) -> None:
+    def __init__(self, book_name: str, highlight_id: int) -> None:
         super().__init__()
-        self.book_name = option[0]
-        self.highlight = option[1]
-        self.highlight_id = option[1].id
-        _, _, _, section, book_path = get_highlight_from_database(self.highlight_id)
+        self.book_name = book_name
+        _, _, _, section, book_path = get_highlight_from_database(highlight_id)
         self.soup = get_full_context_from_highlight(BOOKS_DIR + book_path,
                                                     section.split('#')[0])
         self.styles.background = "purple"
         # start with the minimum possible quote (minimum amount of sentences
         # that enclose the kobo highlight)
-        enclosed_highlight = get_highlight_context_from_id(self.highlight_id)
+        enclosed_highlight = get_highlight_context_from_id(highlight_id)
         # get previous and posterior context
         self.quote = enclosed_highlight
         self.before = expand_found_highlight(enclosed_highlight, self.soup, 2, True)
@@ -129,6 +129,7 @@ class SingleHighlightWidget(
         text.append(f"{' '.join(self.after)}...", style='#828282')
         return text
 
+    # TODO these could certainly be refactored
     def contract_quote_above(self, fine=False):
         if fine:
             if self.fine_before != "":
@@ -224,17 +225,19 @@ class SingleHighlightsScreen(Screen):
     }
     """
 
-    def __init__(self, name: str, highlight: tuple[str, Option]) -> None:
+    def __init__(self, name: str, menu_option: tuple[str, Option]) -> None:
         super().__init__(name)
-        self.highlight = highlight
+        self.book_name = menu_option[0]
+        self.highlight_id = menu_option[1].id
         self.styles.layout = 'horizontal'
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="display"):
-            yield SingleHighlightWidget(self.highlight)
+            yield SingleHighlightWidget(self.book_name,
+                                        self.highlight_id)
         with Vertical(id="controls"):
-            yield TiddlerInformationWidget("TEST",
-                                           self.highlight)
+            yield TiddlerInformationWidget(self.book_name,
+                                           self.highlight_id)
         yield Header()
         yield Footer()
 
@@ -259,3 +262,5 @@ class SingleHighlightsScreen(Screen):
             self.query_one(SingleHighlightWidget).extend_quote_below(True)
         if event.key == "K":
             self.query_one(SingleHighlightWidget).contract_quote_below(True)
+        if event.key == "t":
+            print(self.highlight)
