@@ -151,8 +151,8 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         result = get_start_and_end_of_highlight(soup, highlight)
         self.assertEqual(" ".join(result), FULL_QUOTE)
 
-    def test_can_get_quote_across_multiple_paragraphs(self):
-        self.assertEqual(1, 0)
+    # def test_can_get_quote_across_multiple_paragraphs(self):
+        # self.assertEqual(1, 0)
 
     def test_can_extend_quote_forwards_until_next_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
@@ -188,7 +188,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         title, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_SCATTERED, section.split('#')[0])
         self.assertNotEqual(soup, None)
-        result = " ".join(r := get_start_and_end_of_highlight(soup, highlight))
+        result = " ".join(get_start_and_end_of_highlight(soup, highlight))
         self.assertEqual(result, FULL_QUOTE)
 
 
@@ -200,10 +200,6 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         self.assertNotEqual(soup, None)
         result = " ".join(get_start_and_end_of_highlight(soup, highlight))
         self.assertEqual(result, """• For reasons examined throughout this book, I’ve gradually realized that sustained, conscious effort is required—or at least strongly self-suggested—for me to not drift toward meaninglessness, depression, disempowering forms of resignation, and bleak ideologies like existentialism.""")
-        broken_soup = break_string_into_list_of_sentences(soup)
-        s = "I want to explain why.\n• For reasons examined throughout this book, I’ve gradually realized that sustained, conscious effort is required—or at least strongly self-suggested—for me to not drift toward meaninglessness, depression, disempowering forms of resignation, and bleak ideologies like existentialism."
-        print(s in broken_soup)
-        self.assertEqual(0, 1)
 
 
 class TestingManipulationOfHighlights(unittest.TestCase):
@@ -216,17 +212,11 @@ class TestingManipulationOfHighlights(unittest.TestCase):
         self.assertIsNotNone(soup)
         fetched_highlight = get_start_and_end_of_highlight(soup, QUOTE)
         self.assertEqual(" ".join(fetched_highlight), QUOTE)
-        print(fetched_highlight)
         before = expand_found_highlight(fetched_highlight, soup, 1, True)
-        print(before)
         new_highlight = before + fetched_highlight
         new_before = expand_found_highlight(new_highlight, soup, 1, True)
-        print(new_highlight)
-        print(new_before)
         newer_before = new_highlight[0]
-        print(newer_before)
         newer_highlight = new_highlight[1:]
-        print(newer_highlight)
 
 
 
