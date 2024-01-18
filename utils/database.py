@@ -45,6 +45,7 @@ def get_highlight_from_database(
     c.execute(f"""
     SELECT
     content.title as BookTitle,
+    content.attribution as BookAuthor,
     Bookmark.Text,
     Bookmark.DateCreated,
     StartContainerPath,
@@ -59,12 +60,12 @@ def get_highlight_from_database(
     # it was due to `quote_to_expand` being preceded by whitespace.
     # the `.strip()` seems to be a fix.
     content = c.fetchall()[0]
-    fixed_path = content[4].split('/')[-1]
-    content = list(content[:4]) + [fixed_path]
+    fixed_path = content[5].split('/')[-1]
+    content = list(content[:5]) + [fixed_path]
     if fixed_path[-5:] != '.epub':
         raise FileNotFoundError
     conn.close()
-    content[1] = content[1].strip()
+    content[2] = content[2].strip()
     return content
 
 
