@@ -17,7 +17,6 @@ from utils.database import (
 
 
 class BookList(OptionList):
-
     BINDINGS = VIM_BINDINGS
 
     def __init__(self, *options: Option) -> None:
