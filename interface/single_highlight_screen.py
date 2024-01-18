@@ -31,15 +31,16 @@ from utils.highlight_handling import (
 
 
 class TiddlerInformationWidget(Widget, can_focus=True):
-
     edited_quote = reactive("")
 
     def __init__(self,
                  book_name: str,
+                 author: str,
                  highlight_id: int
                  ) -> None:
         super().__init__()
         self.book_name = book_name
+        self.author = author
         self.highlight_id = highlight_id
 
     def compose(self) -> ComposeResult:
@@ -64,7 +65,7 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         if book_tiddler_exists(self.book_name):
             highlight_order = increment_book_tiddler_highlight_number(self.book_name)
         else:
-            create_book_tiddler(self.book_name, "AUTHOR_IS_MISSING")
+            create_book_tiddler(self.book_name, self.author)
             highlight_order = 1
 
         # Remove the last 3 digits of microseconds
@@ -105,20 +106,21 @@ class SingleHighlightWidget(
     }
     """
 
-    def __init__(self, book_name: str, highlight_id: int) -> None:
+    def __init__(
+            self,
+            highlight: int,
+            soup: str
+            ) -> None:
         super().__init__()
-        self.book_name = book_name
-        _, _, _, section, book_path = get_highlight_from_database(highlight_id)
-        self.soup = get_full_context_from_highlight(BOOKS_DIR + book_path,
-                                                    section.split('#')[0])
+        self.highlight = highlight
+        self.soup = soup
         self.styles.background = "purple"
-        # start with the minimum possible quote (minimum amount of sentences
-        # that enclose the kobo highlight)
-        enclosed_highlight = get_highlight_context_from_id(highlight_id)
-        # get previous and posterior context
-        self.quote = enclosed_highlight
-        self.before = expand_found_highlight(enclosed_highlight, self.soup, 2, True)
-        self.after = expand_found_highlight(enclosed_highlight, self.soup, 2, False)
+        # start with the minimum possible quote
+        # (minimum amount of sentences that enclose the kobo highlight)
+        # and get previous and posterior context
+        self.quote = highlight
+        self.before = expand_found_highlight(highlight, self.soup, 2, True)
+        self.after = expand_found_highlight(highlight, self.soup, 2, False)
 
     class SendQuote(Message):
         """Sent when the 'create Tiddler' button is pressed."""
@@ -241,16 +243,21 @@ class SingleHighlightsScreen(Screen):
 
     def __init__(self, name: str, menu_option: tuple[str, Option]) -> None:
         super().__init__(name)
-        self.book_name = menu_option[0]
         self.highlight_id = menu_option[1].id
         self.styles.layout = 'horizontal'
+        info = get_highlight_from_database(self.highlight_id)
+        self.book_name, self.author, _, _, section, path = info
+        self.closed_highlight = get_highlight_context_from_id(self.highlight_id)
+        self.soup = get_full_context_from_highlight(BOOKS_DIR + path,
+                                                    section.split('#')[0])
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="display"):
-            yield SingleHighlightWidget(self.book_name,
-                                        self.highlight_id)
+            yield SingleHighlightWidget(self.closed_highlight,
+                                        self.soup)
         with Vertical(id="controls"):
             yield TiddlerInformationWidget(self.book_name,
+                                           self.author,
                                            self.highlight_id)
         yield Header()
         yield Footer()

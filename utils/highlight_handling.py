@@ -119,7 +119,7 @@ def get_context_indices_for_highlight_display(
 def get_highlight_context_from_id(
         highlight_id: str,
         ) -> list[str]:
-    title, highlight, _, section, book_path = (
+    title, _, highlight, _, section, book_path = (
             get_highlight_from_database(highlight_id))
     soup = get_full_context_from_highlight(BOOKS_DIR + book_path, section.split('#')[0])
     paragraphs = get_start_and_end_of_highlight(soup, highlight)
