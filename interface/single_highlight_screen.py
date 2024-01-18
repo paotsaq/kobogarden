@@ -1,9 +1,9 @@
-import traceback
 from datetime import datetime
 from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.widgets import Footer, Header, Input, Button
 from textual import events
+from textual.message import Message
 from textual.screen import Screen
 from textual.reactive import reactive
 from textual.containers import VerticalScroll, Vertical
@@ -32,13 +32,14 @@ from utils.highlight_handling import (
 
 class TiddlerInformationWidget(Widget, can_focus=True):
 
+    edited_quote = reactive("")
+
     def __init__(self,
                  book_name: str,
                  highlight_id: int
                  ) -> None:
         super().__init__()
         self.book_name = book_name
-        self.edited_quote = ""
         self.highlight_id = highlight_id
 
     def compose(self) -> ComposeResult:
@@ -59,6 +60,11 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         if self.highlight_title.value == "":
             return
 
+        # ask parent Screen to retrieve updated highlight
+        if self.edited_quote == "":
+            print("NOTHING CHANGED")
+            return
+
         # Access or create book tiddler, and retrieve the `highlight_order`
         if book_tiddler_exists(self.book_name):
             highlight_order = increment_book_tiddler_highlight_number(self.book_name)
@@ -75,7 +81,7 @@ class TiddlerInformationWidget(Widget, can_focus=True):
                 [self.book_name] + self.highlight_tags.value.split(),
                 self.highlight_title.value,
                 self.highlight_notes.value,
-                self.highlight_widget.quote,
+                self.edited_quote,
                 highlight_order
                 )
 
@@ -83,7 +89,7 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         with open(TIDDLERS_PATH + self.highlight_title.value + '.tid', "w") as file:
             file.write(tiddler)
 
-        add_highlight_id_to_record(self.highlight.id)
+        add_highlight_id_to_record(self.highlight_id)
 
 
 class SingleHighlightWidget(
@@ -95,6 +101,7 @@ class SingleHighlightWidget(
     fine_after = reactive("", layout=True)
     before = reactive("", layout=True)
     after = reactive("", layout=True)
+    full_quote = reactive("")
 
     DEFAULT_CSS = """
     SingleHighlightWidget {
@@ -118,6 +125,17 @@ class SingleHighlightWidget(
         self.before = expand_found_highlight(enclosed_highlight, self.soup, 2, True)
         self.after = expand_found_highlight(enclosed_highlight, self.soup, 2, False)
 
+    class SendQuote(Message):
+        """Sent when the 'create Tiddler' button is pressed."""
+
+        def __init__(self) -> None:
+            super().__init__()
+
+    def watch_full_quote(self) -> None:
+        # ask parent Screen to retrieve updated highlight
+        self.post_message(self.SendQuote())
+        return
+
     def render(self) -> Text:
         text = Text()
         text.append(f"...{' '.join(self.before)}", style='#828282')
@@ -127,6 +145,7 @@ class SingleHighlightWidget(
         text.append(f"{self.fine_after}", style='bold')
         text.append('|', style='bold red')
         text.append(f"{' '.join(self.after)}...", style='#828282')
+        self.full_quote = " ".join([self.fine_before, " ".join(self.quote), self.fine_after])
         return text
 
     # TODO these could certainly be refactored
@@ -264,3 +283,11 @@ class SingleHighlightsScreen(Screen):
             self.query_one(SingleHighlightWidget).contract_quote_below(True)
         if event.key == "t":
             print(self.highlight)
+
+    def on_single_highlight_widget_send_quote(
+            self,
+            event: SingleHighlightWidget.SendQuote
+            ) -> None:
+        """"""
+        new_highlight = self.query_one(SingleHighlightWidget).full_quote
+        self.query_one(TiddlerInformationWidget).edited_quote = new_highlight
