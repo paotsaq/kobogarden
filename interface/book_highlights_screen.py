@@ -4,6 +4,9 @@ from textual import events
 from textual.screen import Screen
 from textual.widgets.option_list import Option
 from rich.table import Table
+from utils.const import (
+        VIM_BINDINGS
+        )
 from utils.database import (
         get_all_highlights_of_book_from_database,
         )
@@ -11,8 +14,12 @@ from utils.tiddler_handling import (
     record_in_highlight_id
 )
 
-class QuotesList(OptionList):
 
+class QuotesList(OptionList):
+    BINDINGS = VIM_BINDINGS
+
+    def __init__(self, *options: Option) -> None:
+        super().__init__(*options)
 
 
 class BookHighlightsScreen(Screen):
@@ -39,15 +46,14 @@ class BookHighlightsScreen(Screen):
         highlights = [self.highlight_generator(*highlight_info)
                       for highlight_info
                       in get_all_highlights_of_book_from_database(self.book)]
-        # Store the OptionList instance as an attribute
-        self.quotes_list = OptionList(*highlights)
+        self.quotes_list = QuotesList(*highlights)
         yield Header()
-        yield self.option_list  # Yield the stored OptionList instance
+        yield self.quotes_list
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "q":
             self.dismiss()
         elif event.key == "enter":
-            selected_option_index = self.option_list.highlighted
-            selected_option = self.option_list._options[selected_option_index]
+            selected_option_index = self.quotes_list.highlighted
+            selected_option = self.quotes_list._options[selected_option_index]
             self.dismiss(['H', [self.book, selected_option]])
