@@ -8,11 +8,20 @@ from interface.single_highlight_screen import (
         )
 from utils.const import (
     DATABASE_PATH,
-    OPTIONS_CSS_PATH
+    OPTIONS_CSS_PATH,
+    VIM_BINDINGS
         )
 from utils.database import (
     get_list_of_highlighted_books,
     )
+
+
+class BookList(OptionList):
+
+    BINDINGS = VIM_BINDINGS
+
+    def __init__(self, *options: Option) -> None:
+        super().__init__(*options)
 
 
 class MainScreen(App[None]):
@@ -27,9 +36,10 @@ class MainScreen(App[None]):
                  in get_list_of_highlighted_books(DATABASE_PATH)]
 
         # Store the OptionList instance as an attribute
-        self.option_list = OptionList(*books)
+        # self.option_list = BookList(*books)
+        self.book_list = BookList(*books)
         yield Header()
-        yield self.option_list  # Yield the stored OptionList instance
+        yield self.book_list
         yield Footer()
 
     def on_key(self, event: events.Key) -> None:
@@ -47,7 +57,7 @@ class MainScreen(App[None]):
 
         # a book has been chosen on the main panel
         if event.key == "enter":
-            selected_option_index = self.option_list.highlighted
-            selected_option = self.option_list._options[selected_option_index]
+            selected_option_index = self.book_list.highlighted
+            selected_option = self.book_list._options[selected_option_index]
             self.push_screen(BookHighlightsScreen("book_highlights", selected_option),
                              check_highlights_panel_quit)
