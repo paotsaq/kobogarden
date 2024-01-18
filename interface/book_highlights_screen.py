@@ -11,6 +11,9 @@ from utils.tiddler_handling import (
     record_in_highlight_id
 )
 
+class QuotesList(OptionList):
+
+
 
 class BookHighlightsScreen(Screen):
     """Screen responsible for displaying each books' highlights"""
@@ -37,7 +40,7 @@ class BookHighlightsScreen(Screen):
                       for highlight_info
                       in get_all_highlights_of_book_from_database(self.book)]
         # Store the OptionList instance as an attribute
-        self.option_list = OptionList(*highlights)
+        self.quotes_list = OptionList(*highlights)
         yield Header()
         yield self.option_list  # Yield the stored OptionList instance
 
