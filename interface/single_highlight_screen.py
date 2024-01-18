@@ -57,12 +57,7 @@ class TiddlerInformationWidget(Widget, can_focus=True):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         # TODO this should be better handled
-        if self.highlight_title.value == "":
-            return
-
-        # ask parent Screen to retrieve updated highlight
-        if self.edited_quote == "":
-            print("NOTHING CHANGED")
+        if self.highlight_title.value == "" or self.edited_quote == "":
             return
 
         # Access or create book tiddler, and retrieve the `highlight_order`

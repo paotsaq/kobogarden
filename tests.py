@@ -52,20 +52,20 @@ class TestingKoboDatabase(unittest.TestCase):
     def test_can_retrieve_jane_eyre_highlight_content_from_ID(self):
         rows = get_highlight_from_database("94ace0c6-b132-48b1-b0d9-1ef0e38db1ed")
         self.assertEqual(rows[0], 'Jane Eyre: An Autobiography')
-        self.assertEqual(rows[1], 'I had made no noise: he had not eyes behind—could his shadow feel?')
-        self.assertEqual(rows[2], '2023-08-30T18:09:48.000')
-        self.assertEqual(rows[3], 'OEBPS/6048514455528670785_1260-h-25.htm.html#point(/1/4/1/21:1)')
-        self.assertEqual(rows[4], 'jane-eyre.epub')
+        self.assertEqual(rows[1], 'Charlotte Brontë')
+        self.assertEqual(rows[2], 'I had made no noise: he had not eyes behind—could his shadow feel?')
+        self.assertEqual(rows[3], '2023-08-30T18:09:48.000')
+        self.assertEqual(rows[4], 'OEBPS/6048514455528670785_1260-h-25.htm.html#point(/1/4/1/21:1)')
+        self.assertEqual(rows[5], 'jane-eyre.epub')
 
     def test_can_retrieve_berlin_highlight_content_from_ID(self):
         rows = get_highlight_from_database("f27d6696-d59a-4cb1-a329-310fd17d6eea")
         self.assertEqual(rows[0], 'The Ghosts of Berlin: Confronting German History in the Urban Landscape')
-        self.assertEqual(rows[1], 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.')
-        self.assertEqual(rows[2], '2023-08-30T06:13:56.000')
-        self.assertEqual(rows[3], 'text/part0011.html#point(/1/4/192/3:147)')
-        self.assertEqual(rows[4], '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub')
-        self.quote = rows[1]
-        self.quote_location = rows[3]
+        self.assertEqual(rows[1], 'Brian Ladd')
+        self.assertEqual(rows[2], 'The relationship between the gate and the all-important circulation of traffic sparked another debate. The attachment many Germans have to their cars has always stopped short of the American practice of tearing down cities to make way for cars, but the passion of German car lovers seems to arouse in Green-thinking Germans the same kind of suspicion that passionate patriotism does.')
+        self.assertEqual(rows[3], '2023-08-30T06:13:56.000')
+        self.assertEqual(rows[4], 'text/part0011.html#point(/1/4/192/3:147)')
+        self.assertEqual(rows[5], '- The Ghosts of Berlin_ Confronting German History in the Urban Landscape.epub')
 
     def test_can_retrieve_a_list_of_books_which_have_highlights(self):
         res = get_list_of_highlighted_books('./test_kobo_db.sqlite')
@@ -87,7 +87,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     # the highlight is well-delimited (no partial sentences before or after).
     def test_can_find_simple_full_quote_in_epub_file(self):
         QUOTE = 'The relationship between the gate and the all-important circulation of traffic sparked another debate.'
-        title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
+        title, _, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BERLIN, 'text/part0011.html')
         self.assertIsNotNone(soup)
         result = " ".join(get_start_and_end_of_highlight(soup, QUOTE))
@@ -98,7 +98,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     def test_can_find_simple_full_quote_in_epub_file_with_punctuation(self):
         HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
         QUOTE = """When people long for some kind of escape, it’s worth asking: What would “back to the land” mean if we understood the land to be where we are right now?"""
-        title, highlight, _, section, _ = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        title, _, highlight, _, section, _ = (x := get_highlight_from_database(HIGHLIGHT_ID))
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
         self.assertIsNotNone(soup)
         result = " ".join(get_start_and_end_of_highlight(soup, QUOTE))
@@ -109,7 +109,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     def test_can_extend_quote_backwards_until_period(self):
         PARTIAL_QUOTE = """fundamental laws of ecology."""
         FULL_QUOTE = """Our modern food production system violates the fundamental laws of ecology."""
-        title, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
+        title, _, highlight, _, section, _ = get_highlight_from_database("1fb6bc3a-7d4f-40a0-ab62-c095fa62b26a")
         # NOTE: the OEBPS/ must be ommited - not sure why!
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         self.assertIsNotNone(soup)
@@ -121,7 +121,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     def test_can_extend_quote_forwards_until_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
         FULL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
-        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        title, _, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         result = " ".join(get_start_and_end_of_highlight(soup, PARTIAL_QUOTE))
         self.assertEqual(result, FULL_QUOTE)
@@ -132,7 +132,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
     def test_can_extend_quote_forwards_and_backwards_until_period(self):
         PARTIAL_QUOTE = """pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
         FULL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
-        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        title, _, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         result = " ".join(get_start_and_end_of_highlight(soup, PARTIAL_QUOTE))
         self.assertEqual(result, FULL_QUOTE)
@@ -146,7 +146,7 @@ class TestingFindingQuoteInEpubFiles(unittest.TestCase):
         FULL_QUOTE = """Such “nothings” cannot be tolerated because they cannot be used or appropriated, and provide no deliverables. (Seen in this context, Trump’s desire to defund the National Endowment for the Arts comes as no surprise.) In the early twentieth century, the surrealist painter Giorgio de Chirico foresaw a narrowing horizon for activities as “unproductive” as observation. He wrote:
 
 In the face of the increasingly materialist and pragmatic orientation of our age…it would not be eccentric in the future to contemplate a society in which those who live for the pleasures of the mind will no longer have the right to demand their place in the sun. The writer, the thinker, the dreamer, the poet, the metaphysician, the observer…he who tries to solve a riddle or to pass judgement will become an anachronistic figure, destined to disappear from the face of the earth like the ichthyosaur and the mammoth."""
-        title, highlight, _, section, book_path = get_highlight_from_database("b22af57c-2b8c-494f-ac99-96fa698f1dac")
+        title, _, highlight, _, section, book_path = get_highlight_from_database("b22af57c-2b8c-494f-ac99-96fa698f1dac")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
         result = get_start_and_end_of_highlight(soup, highlight)
         self.assertEqual(" ".join(result), FULL_QUOTE)
@@ -157,7 +157,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
     def test_can_extend_quote_forwards_until_next_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
         FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
-        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        title, _, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         found_highlight = get_start_and_end_of_highlight(soup, PARTIAL_QUOTE)
         self.assertEqual(" ".join(found_highlight), FIRST_FOUND_QUOTE)
@@ -168,7 +168,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
 
     def test_can_extend_quote_backwards_until_next_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
-        title, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
+        title, _, highlight, _, section, _ = get_highlight_from_database("c71f3857-162f-43c2-b783-d63eb63b6957")
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_BURN, section.split('#')[0])
         found_highlight = get_start_and_end_of_highlight(soup, PARTIAL_QUOTE)
         FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
@@ -185,7 +185,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
     def test_highlight_with_single_word_stray(self):
         HIGHLIGHT_ID = "302e8612-9b65-43b0-b871-e9943038afc6"
         FULL_QUOTE = "The shock of self-recognition many adults experience on learning about ADD is both exhilarating and painful. It gives coherence, for the first time, to humiliations and failures, to plans unfulfilled and promises unkept, to gusts of manic enthusiasm that consume themselves in their own mad dance, leaving emotional debris in their wake, to the seemingly limitless disorganization of activities, of brain, car, desk, room."
-        title, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
+        title, _, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_SCATTERED, section.split('#')[0])
         self.assertNotEqual(soup, None)
         result = " ".join(get_start_and_end_of_highlight(soup, highlight))
@@ -194,7 +194,7 @@ In the face of the increasingly materialist and pragmatic orientation of our age
 
     def test_weird_symbols_in_quote(self):
         HIGHLIGHT_ID = "f96e9093-fd56-400c-93f6-102c4ade243f"
-        title, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
+        title, _, highlight, _, section, book_path = get_highlight_from_database(HIGHLIGHT_ID)
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + 'trip.epub',
                                                section.split('#')[0])
         self.assertNotEqual(soup, None)
@@ -207,7 +207,7 @@ class TestingManipulationOfHighlights(unittest.TestCase):
     def test_can_get_start_and_end_of_highlight(self):
         HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
         QUOTE = """When people long for some kind of escape, it’s worth asking: What would “back to the land” mean if we understood the land to be where we are right now?"""
-        title, highlight, _, section, _ = get_highlight_from_database(HIGHLIGHT_ID)
+        title, _, highlight, _, section, _ = get_highlight_from_database(HIGHLIGHT_ID)
         soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
         self.assertIsNotNone(soup)
         fetched_highlight = get_start_and_end_of_highlight(soup, QUOTE)
