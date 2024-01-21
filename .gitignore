@@ -5,3 +5,4 @@ test_books/burn.epub
 test_books/howto.epub
 test_books/scattered_minds.epub
 test_books/trip.epub
+my_kobo_db.sqlite
