@@ -1,6 +1,5 @@
 import unittest
 import sqlite3
-from functools import reduce
 from datetime import datetime
 from utils.database import (
         create_connection_to_database,
@@ -15,22 +14,18 @@ from utils.highlight_handling import (
         get_full_context_from_highlight,
         get_start_and_end_of_highlight,
         expand_found_highlight,
-        break_string_into_list_of_sentences
         )
 from utils.const import (
     SQLITE_DB_PATH,
     SQLITE_DB_NAME,
 )
 
+TEST_BOOKS_DIR = 'test_books/'
 TEST_EPUB_JANEEYRE = 'jane-eyre.epub'
 TEST_EPUB_BERLIN = 'berlin.epub'
 TEST_EPUB_BURN = 'burn.epub'
 TEST_EPUB_HOWTO = 'howto.epub'
 TEST_EPUB_SCATTERED = 'scattered_minds.epub'
-DESIRED_SENTENCE = """It is in vain to say human beings ought to be satisfied with tranquillity: they must have action, and they will make it if they cannot find it."""
-ANOTHER_DESIRED_SENTENCE = """if she were a nice, pretty child, one might compassionate her forlornness"""
-TEST_BOOKS_DIR = 'test_books/'
-
 
 
 # def normalise_whitespace_in_highlight(highlight: str) -> list[str]:
@@ -151,9 +146,6 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         result = get_start_and_end_of_highlight(soup, highlight)
         self.assertEqual(" ".join(result), FULL_QUOTE)
 
-    # def test_can_get_quote_across_multiple_paragraphs(self):
-        # self.assertEqual(1, 0)
-
     def test_can_extend_quote_forwards_until_next_period(self):
         PARTIAL_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories)"""
         FIRST_FOUND_QUOTE = """When the molecules in a pound of nitroglycerin (chemical formula: 4C3H5N3O9) are broken into nitrogen (N2), water (H2O), carbon monoxide (CO), and oxygen (O2) during detonation, it violently releases enough energy (730 kilocalories) to launch a 165-pound man two and a half miles straight up into the sky (which would be work) or vaporize him (which would be heat), or some combination of the two."""
@@ -202,28 +194,10 @@ In the face of the increasingly materialist and pragmatic orientation of our age
         self.assertEqual(result, """• For reasons examined throughout this book, I’ve gradually realized that sustained, conscious effort is required—or at least strongly self-suggested—for me to not drift toward meaninglessness, depression, disempowering forms of resignation, and bleak ideologies like existentialism.""")
 
 
-class TestingManipulationOfHighlights(unittest.TestCase):
-
-    def test_can_get_start_and_end_of_highlight(self):
-        HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
-        QUOTE = """When people long for some kind of escape, it’s worth asking: What would “back to the land” mean if we understood the land to be where we are right now?"""
-        title, _, highlight, _, section, _ = get_highlight_from_database(HIGHLIGHT_ID)
-        soup = get_full_context_from_highlight(TEST_BOOKS_DIR + TEST_EPUB_HOWTO, section.split('#')[0])
-        self.assertIsNotNone(soup)
-        fetched_highlight = get_start_and_end_of_highlight(soup, QUOTE)
-        self.assertEqual(" ".join(fetched_highlight), QUOTE)
-        before = expand_found_highlight(fetched_highlight, soup, 1, True)
-        new_highlight = before + fetched_highlight
-        new_before = expand_found_highlight(new_highlight, soup, 1, True)
-        newer_before = new_highlight[0]
-        newer_highlight = new_highlight[1:]
-
-
-
 class TestingCreationOfHighlightTiddler(unittest.TestCase):
 
     # 11/21 tags were failing when the book title had spaces.
-    # ideally, the `produce_highlight_tiddler_string` will 
+    # ideally, the `produce_highlight_tiddler_string` will
     # enclose any given tag (including book title) with double square brackets.
     def test_can_create_highlight_tiddler(self):
         self.maxDiff = None
