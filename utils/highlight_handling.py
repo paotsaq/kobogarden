@@ -6,8 +6,24 @@ from utils.const import (
         )
 from utils.database import (
     get_highlight_from_database,
-
 )
+
+
+def get_index_of_sentence_in_sentences_list(
+        h: str,
+        book_sentences: list[str]
+        ) -> int:
+    # NOTE this is still a very naive method ('x' in 'xyz')
+    start_index, sentence = next(filter(lambda enum_tuple: h in enum_tuple[1],
+                                 enumerate(book_sentences)))
+    return start_index, sentence
+
+
+def break_string_into_list_of_sentences(string: str):
+    # pattern to break a string (soup or highlight) into a list of sentences,
+    # using the period ('.') and other punctiation as delimiter.
+    pattern = r"(?<=[.!?])\s*(?=•|\w)"
+    return re.split(pattern, string)
 
 
 # provides the full content of the .html file
@@ -34,24 +50,6 @@ def get_full_context_from_highlight(
     return soup
 
 
-# gets the paragraph that contains a sentence.
-def get_index_of_sentence_in_sentences_list(
-        h: str,
-        book_sentences: list[str]
-        ) -> int:
-    # NOTE this is still a very naive method ('x' in 'xyz')
-    start_index, sentence = next(filter(lambda enum_tuple: h in enum_tuple[1],
-                                 enumerate(book_sentences)))
-    return start_index, sentence
-
-
-def break_string_into_list_of_sentences(string: str):
-    # pattern to break a string (soup or highlight) into a list of sentences,
-    # using the period ('.') and other punctiation as delimiter.
-    pattern = r"(?<=[.!?])\s*(?=•|\w)"
-    return re.split(pattern, string)
-
-
 # NOTE the soup is the whole context of the quote.
 # this function retrieves the sentence or paragraph containing the quote,
 # In the case of the first or last sentence of the highlight being incomplete,
@@ -61,7 +59,6 @@ def get_start_and_end_of_highlight(
         soup: str,
         highlight: str
         ) -> list[str]:
-
     highlight_sentences = break_string_into_list_of_sentences(highlight)
     broken_soup = break_string_into_list_of_sentences(soup)
     # NOTE I feel something could be done here
@@ -89,6 +86,19 @@ def get_start_and_end_of_highlight(
     return broken_soup[match_start_index:match_end_index + 1]
 
 
+# provides the highlight with the minimum surrounding context
+# ie. if the original highlight was an incomplete sentence,
+# it will extend to the beginning and/or end of sentence.
+def get_highlight_context_from_id(
+        highlight_id: str,
+        ) -> list[str]:
+    title, _, highlight, _, section, book_path = (
+            get_highlight_from_database(highlight_id))
+    soup = get_full_context_from_highlight(BOOKS_DIR + book_path, section.split('#')[0])
+    paragraphs = get_start_and_end_of_highlight(soup, highlight)
+    return paragraphs
+
+
 # the function provides more context for a given highlight.
 # it will return `amount_of_sentences` before or after the highlight
 def expand_found_highlight(
@@ -106,21 +116,3 @@ def expand_found_highlight(
             else broken_soup[highlight_location + 1:highlight_location + 1 + amount_of_sentences])
 
 
-def get_context_indices_for_highlight_display(
-        context: str,
-        highlight: str
-        ):
-    highlight = highlight
-    start_index = context.find(highlight)
-    end_index = start_index + len(highlight)
-    return start_index, end_index
-
-
-def get_highlight_context_from_id(
-        highlight_id: str,
-        ) -> list[str]:
-    title, _, highlight, _, section, book_path = (
-            get_highlight_from_database(highlight_id))
-    soup = get_full_context_from_highlight(BOOKS_DIR + book_path, section.split('#')[0])
-    paragraphs = get_start_and_end_of_highlight(soup, highlight)
-    return paragraphs

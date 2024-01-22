@@ -1,0 +1,10 @@
+#display, #controls {
+	width: 1fr;
+	margin: 2;
+}
+
+#tiddler_info {
+	width: 1fr;
+	margin: 2;
+}
+
