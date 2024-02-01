@@ -266,7 +266,7 @@ class SingleHighlightsScreen(Screen):
         # return to the book highlight screen
         if event.key == "q":
             # TODO this is not working
-            self.dismiss(['X', self.highlight])
+            self.dismiss(['X', self.highlight_id])
         if event.key == "b":
             self.query_one(SingleHighlightWidget).extend_quote_above()
         if event.key == "B":
