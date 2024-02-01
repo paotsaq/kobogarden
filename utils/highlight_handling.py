@@ -114,5 +114,3 @@ def expand_found_highlight(
     return (broken_soup[highlight_location - amount_of_sentences:highlight_location]
             if backwards
             else broken_soup[highlight_location + 1:highlight_location + 1 + amount_of_sentences])
-
-
