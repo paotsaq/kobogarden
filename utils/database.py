@@ -69,24 +69,25 @@ def get_highlight_from_database(
     return content
 
 
+# returns a list of lists of three strings
 def get_list_of_highlighted_books(
         sqlite_db_path: str
-        ):
+        ) -> list[list[str, str, str]]:
     def take_epub_file_name_from_path(path: str):
         return path.split('/')[-1]
     conn = create_connection_to_database(sqlite_db_path)
     c = conn.cursor()
-    # Execute the SQL query
     c.execute("""
-    SELECT 
+    SELECT
         unique_book_titles.BookTitle,
         content.Attribution,
         content.ContentID
-    FROM 
+    FROM
         (SELECT DISTINCT content.title as BookTitle
         FROM "Bookmark"
         LEFT OUTER JOIN content
-        ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)) as unique_book_titles
+        ON (content.contentID=Bookmark.VolumeID and content.ContentType=6))
+            as unique_book_titles
     LEFT OUTER JOIN content
     ON unique_book_titles.BookTitle = content.Title
     WHERE content.Attribution IS NOT NULL
