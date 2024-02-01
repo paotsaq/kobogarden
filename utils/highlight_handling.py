@@ -35,7 +35,7 @@ def get_full_context_from_highlight(
         book_path: str,
         section_path: str
         ) -> str:
-    book = epub.read_epub(book_path)
+    book = epub.read_epub(book_path, {"ignore_ncx": True})
     if not book:
         raise FileNotFoundError("The book doesn't seem to exist?")
     section = None
