@@ -28,7 +28,7 @@ Hmm. For this to be of any use for you, you'd need to read on a Kobo device, be 
 
 I very much doubt it can be useful out of the box, but maybe there's *something* that might help if you find yourself looking for similar stuff?
 
-Also, there's [this link](https://sbsbsb.sbs/kobogarden/) on my personal website with more details on how all of this works.
+Also, there's [this link](https://sbsbsb.sbs/kobogarden) on my personal website with more details on how all of this works.
 
 ### How could I test this?
 
