@@ -17,9 +17,10 @@ def produce_book_tiddler_string(
     default, it will start at 1 (book tiddlers are created
     in the single highlight panel)"""
     return f"""created: {created_timestamp}
-creator: paotsaq
+creator: kobogarden-script
+created: {created_timestamp}
+modifier: kobogarden-script
 modified: {created_timestamp}
-modifier: paotsaq
 tags: book
 title: {book}
 author: {author}
@@ -81,9 +82,10 @@ def produce_highlight_tiddler_string(
         quote_order: int
         ) -> str:
     return f"""created: {created_timestamp}
-creator: paotsaq
+creator: kobogarden-script
+created: {created_timestamp}
+modifier: kobogarden-script
 modified: {created_timestamp}
-modifier: paotsaq
 tags: {" ".join([tag if ' ' not in tag else f'[[{tag}]]' for tag in tags])}
 title: {highlight_title}
 type: text/vnd.tiddlywiki
