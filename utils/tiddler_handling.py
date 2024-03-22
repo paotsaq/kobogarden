@@ -17,9 +17,9 @@ def produce_book_tiddler_string(
     default, it will start at 1 (book tiddlers are created
     in the single highlight panel)"""
     return f"""created: {created_timestamp}
-creator: kobogarden-script
+creator: kobogarden
 created: {created_timestamp}
-modifier: kobogarden-script
+modifier: kobogarden
 modified: {created_timestamp}
 tags: book
 title: {book}
@@ -73,6 +73,7 @@ def increment_book_tiddler_highlight_number(book_title: str) -> int:
     return highlight_count + 1
 
 
+# 240322 - adds a book-quote tiddler by default 
 def produce_highlight_tiddler_string(
         created_timestamp: str,
         tags: list,
@@ -82,11 +83,12 @@ def produce_highlight_tiddler_string(
         quote_order: int
         ) -> str:
     return f"""created: {created_timestamp}
-creator: kobogarden-script
+creator: kobogarden
 created: {created_timestamp}
-modifier: kobogarden-script
+modifier: kobogarden
 modified: {created_timestamp}
-tags: {" ".join([tag if ' ' not in tag else f'[[{tag}]]' for tag in tags])}
+tags: {" ".join(["book-quote"] + [tag if ' ' not in tag else f'[[{tag}]]'
+                                      for tag in tags])}
 title: {highlight_title}
 type: text/vnd.tiddlywiki
 quote-order: {'0' if quote_order < 10 else ''}{str(quote_order)}
