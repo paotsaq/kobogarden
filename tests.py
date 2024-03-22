@@ -19,6 +19,12 @@ from utils.const import (
     SQLITE_DB_PATH,
     SQLITE_DB_NAME,
 )
+from utils.toc_handling import (
+    get_table_of_contents_from_epub,
+    retrieve_clean_href,
+    get_dict_of_href_and_title_from_toc,
+    match_highlight_section_to_chapter
+)
 
 TEST_BOOKS_DIR = 'test_books/'
 TEST_EPUB_JANEEYRE = 'jane-eyre.epub'
@@ -26,13 +32,6 @@ TEST_EPUB_BERLIN = 'berlin.epub'
 TEST_EPUB_BURN = 'burn.epub'
 TEST_EPUB_HOWTO = 'howto.epub'
 TEST_EPUB_SCATTERED = 'scattered_minds.epub'
-
-
-# def normalise_whitespace_in_highlight(highlight: str) -> list[str]:
-# return list(filter(lambda s: s != '',
-                   # map(lambda s: s.strip(),
-                       # highlight.splitlines())))
-# print(normalise_whitespace_in_highlight(highlight))
 
 
 class TestingKoboDatabase(unittest.TestCase):
@@ -218,10 +217,11 @@ class TestingCreationOfHighlightTiddler(unittest.TestCase):
                 1
                 )
         result = f"""created: {formatted_now}
-creator: paotsaq
+creator: kobogarden
+created: {formatted_now}
+modifier: kobogarden
 modified: {formatted_now}
-modifier: paotsaq
-tags: [[{book}]] test [[another test]]
+tags: book-quote [[{book}]] test [[another test]]
 title: {title}
 type: text/vnd.tiddlywiki
 quote-order: 01
@@ -233,6 +233,20 @@ quote-order: 01
 <<<
 """
         self.assertEqual(tiddler, result)
+
+
+# 24/02/01 - realised chapter information about each book would be nice.
+class TestingBookTableOfContents(unittest.TestCase):
+
+    def test_can_get_table_of_contents_for_a_given_book(self):
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_HOWTO)
+        self.assertIsNotNone(book_toc)
+
+    def test_can_match_highlight_with_a_chapter(self):
+        HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
+        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_HOWTO)
+        self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'Introduction: Surviving Usefulness')
 
 
 if __name__ == '__main__':
