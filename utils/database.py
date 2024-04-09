@@ -10,6 +10,17 @@ def create_connection_to_database(path: str) -> sqlite3.Connection:
     return conn
 
 
+def get_book_filename_from_book_name(book_name: str) -> str:
+    conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
+    c = conn.cursor()
+    c.execute(f"""SELECT BookId from content where BookTitle="{book_name}";""")
+    content = c.fetchall()[0][0]
+    fixed_path = content.split('/')[-1]
+    if fixed_path[-5:] != '.epub':
+        raise FileNotFoundError
+    return fixed_path
+
+
 # returns a list with
 # full highlight content and date of highlight
 def get_all_highlights_of_book_from_database(
@@ -21,7 +32,8 @@ def get_all_highlights_of_book_from_database(
     SELECT
     Bookmark.Text,
     Bookmark.DateCreated,
-    BookmarkID
+    BookmarkID,
+    StartContainerPath
     FROM "Bookmark"
     LEFT OUTER JOIN content
     ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
@@ -36,7 +48,7 @@ def get_all_highlights_of_book_from_database(
 
 # returns a list with
 # title of book, full highlight content, date of highlight,
-# start of highlight, epub file name"""
+# highlight, container_path, epub file name"""
 def get_highlight_from_database(
         highlight_id: str
         ) -> list[str]:
