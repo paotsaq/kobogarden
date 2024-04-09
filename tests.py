@@ -1,5 +1,6 @@
 import unittest
 import sqlite3
+from ebooklib import epub
 from datetime import datetime
 from utils.database import (
         create_connection_to_database,
@@ -32,6 +33,7 @@ TEST_EPUB_BERLIN = 'berlin.epub'
 TEST_EPUB_BURN = 'burn.epub'
 TEST_EPUB_HOWTO = 'howto.epub'
 TEST_EPUB_SCATTERED = 'scattered_minds.epub'
+TEST_EPUB_APRENDENDO = 'aprendendo.epub'
 
 
 class TestingKoboDatabase(unittest.TestCase):
@@ -237,16 +239,35 @@ quote-order: 01
 
 # 24/02/01 - realised chapter information about each book would be nice.
 class TestingBookTableOfContents(unittest.TestCase):
-
     def test_can_get_table_of_contents_for_a_given_book(self):
         book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_HOWTO)
         self.assertIsNotNone(book_toc)
+
+    def test_can_get_table_of_contents_for_another_given_book(self):
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SCATTERED)
+        self.assertIsNotNone(book_toc)
+
+    # on SCATTERED_MINDS, book chapters come with chapter number.
+    def test_can_retrieve_chapter_info_from_toc(self):
+        HIGHLIGHT_ID = "e56c7386-951f-4b60-b500-f5ceff2c8777"
+        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SCATTERED)
+        self.assertEqual(match_highlight_section_to_chapter(section, book_toc), '10 The Footprints of Infancy')
 
     def test_can_match_highlight_with_a_chapter(self):
         HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
         title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
         book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_HOWTO)
         self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'Introduction: Surviving Usefulness')
+
+    # APRENDENDO has no information; it's TOC has a different structure
+    def test_can_retrieve_chapter_info_from_another_book(self):
+        HIGHLIGHT_ID = "edaa00fc-4a15-4c86-99d4-f9176e3fdacf"
+        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_APRENDENDO)
+        parsed_dict = get_dict_of_href_and_title_from_toc(book_toc)
+        self.assertEqual(True, False)
+
 
 
 if __name__ == '__main__':
