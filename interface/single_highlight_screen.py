@@ -28,6 +28,10 @@ from utils.highlight_handling import (
         get_highlight_context_from_id,
         expand_found_highlight
         )
+from utils.toc_handling import (
+    get_table_of_contents_from_epub,
+    match_highlight_section_to_chapter
+        )
 
 
 class TiddlerInformationWidget(Widget, can_focus=True):
@@ -36,12 +40,14 @@ class TiddlerInformationWidget(Widget, can_focus=True):
     def __init__(self,
                  book_name: str,
                  author: str,
-                 highlight_id: int
+                 highlight_id: int,
+                 chapter: str
                  ) -> None:
         super().__init__()
         self.book_name = book_name
         self.author = author
         self.highlight_id = highlight_id
+        self.chapter = chapter
 
     def compose(self) -> ComposeResult:
         self.highlight_notes = Input(classes='highlight_input',
@@ -74,11 +80,13 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         # Creates the tiddler string
         tiddler = produce_highlight_tiddler_string(
                 formatted_now,
-                [self.book_name] + self.highlight_tags.value.split(),
+                ([self.book_name] +
+                 self.highlight_tags.value.split()),
                 self.highlight_title.value,
                 self.highlight_notes.value,
                 self.edited_quote,
-                highlight_order
+                highlight_order,
+                self.chapter
                 )
 
         # Writes the new tiddler file
@@ -247,6 +255,8 @@ class SingleHighlightsScreen(Screen):
         self.styles.layout = 'horizontal'
         info = get_highlight_from_database(self.highlight_id)
         self.book_name, self.author, _, _, section, path = info
+        book_toc = get_table_of_contents_from_epub(BOOKS_DIR + path)
+        self.chapter = match_highlight_section_to_chapter(section, book_toc)
         self.closed_highlight = get_highlight_context_from_id(self.highlight_id)
         self.soup = get_full_context_from_highlight(BOOKS_DIR + path,
                                                     section.split('#')[0])
@@ -258,7 +268,8 @@ class SingleHighlightsScreen(Screen):
         with Vertical(id="controls"):
             yield TiddlerInformationWidget(self.book_name,
                                            self.author,
-                                           self.highlight_id)
+                                           self.highlight_id,
+                                           self.chapter)
         yield Header()
         yield Footer()
 

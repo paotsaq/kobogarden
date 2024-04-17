@@ -1,8 +1,11 @@
 .direnv
 **/__pycache__/
+test_books/aprendendo.epub
 test_books/berlin.epub
 test_books/burn.epub
 test_books/howto.epub
 test_books/scattered_minds.epub
 test_books/trip.epub
+test_books/shallows.epub
 my_kobo_db.sqlite
+add-tag-to-book-quotes.py

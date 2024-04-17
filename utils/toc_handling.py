@@ -21,7 +21,6 @@ def retrieve_clean_href(href: str):
     """OEBPS/xhtml/Odel_9781612197500_epub3_itr_r1.xhtml#point(/1/4/22/4:478)
     ->
     xhtml/Odel_9781612197500_epub3_itr_r1.xhtml"""
-    print(f"raw href: {href}")
     if '#' not in href:
         return href
     else:
@@ -46,11 +45,20 @@ def get_dict_of_href_and_title_from_toc(toc):
                             all_refs[clean] = sub_elem.title
     return all_refs
 
+# retrieves the preceding chapter from the table of contents
+def get_previous_chapter_from_section(section: str, toc: dict) -> str:
+    sorted_toc_sections = sorted(list(toc.keys()) + [section])
+    i = sorted_toc_sections.index(section)
+    return sorted_toc_sections[i - 1]
+
+
 
 def match_highlight_section_to_chapter(section: str, toc) -> str | None:
     href_title_dict = get_dict_of_href_and_title_from_toc(toc)
     clean_section = retrieve_clean_href(section)
     if clean_section in href_title_dict.keys():
         return href_title_dict[clean_section]
+    # 24/04/17: if the section is not in the TOC, we try to map
+    # to the preceding chapter
     else:
-        return None
+        return href_title_dict[get_previous_chapter_from_section(clean_section, href_title_dict)]

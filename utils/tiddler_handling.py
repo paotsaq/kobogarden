@@ -54,33 +54,29 @@ def increment_book_tiddler_highlight_number(book_title: str) -> int:
     but also returns the number of highlights"""
     with open(TIDDLERS_PATH + book_title + '.tid', 'r') as file:
         content = file.read()
+
     lines = content.splitlines()
-    # NOTE the try/except block handles the weird rearrangement 
-    # of the tiddler's inner structure whenever the author field
-    # is changed through the TiddlyWiki frontend.
-    # solving the `AUTHOR_IS_MISSING` hardcode is not guaranteed to be a solution
-    # because that might be wrong at some points too.
-    try:
-        NBR_OF_HIGHLIGHTS_LINE_INDEX = 7
-        highlight_count = int(lines[NBR_OF_HIGHLIGHTS_LINE_INDEX].split()[1])
-        lines[NBR_OF_HIGHLIGHTS_LINE_INDEX] = f'nbr_of_highlights: {highlight_count + 1}'
-    except ValueError:
-        NBR_OF_HIGHLIGHTS_LINE_INDEX = 5
-        highlight_count = int(lines[NBR_OF_HIGHLIGHTS_LINE_INDEX].split()[1])
-        lines[NBR_OF_HIGHLIGHTS_LINE_INDEX] = f'nbr_of_highlights: {highlight_count + 1}'
+    # takes the line corresponding to the nbr_of_highlights information
+    index, line = next(filter(lambda pair: 'nbr_of_highlights' in pair[1],
+                       enumerate(lines)))
+    new_highlight_count = int(line.split()[1]) + 1
+    new_lines = (lines[:index] +
+                 [f'nbr_of_highlights: {new_highlight_count}'] +
+                 lines[index + 1:])
     with open(TIDDLERS_PATH + book_title + '.tid', 'w') as file:
-        content = file.write("\n".join(lines))
-    return highlight_count + 1
+        content = file.write("\n".join(new_lines))
+    return new_highlight_count
 
 
-# 240322 - adds a book-quote tiddler by default 
+# 240322 - adds a book-quote tiddler by default
 def produce_highlight_tiddler_string(
         created_timestamp: str,
         tags: list,
         highlight_title: str,
         comment: str,
         highlight: str,
-        quote_order: int
+        quote_order: int,
+        chapter: str = ""
         ) -> str:
     return f"""created: {created_timestamp}
 creator: kobogarden
@@ -90,6 +86,7 @@ modified: {created_timestamp}
 tags: {" ".join(["book-quote"] + [tag if ' ' not in tag else f'[[{tag}]]'
                                       for tag in tags])}
 title: {highlight_title}
+chapter: {chapter}
 type: text/vnd.tiddlywiki
 quote-order: {'0' if quote_order < 10 else ''}{str(quote_order)}
 
