@@ -9,7 +9,9 @@ from utils.database import (
         get_list_of_highlighted_books,
         )
 from utils.tiddler_handling import (
-    produce_highlight_tiddler_string
+    produce_highlight_tiddler_string,
+    produce_book_tiddler_string,
+    create_book_tiddler
 )
 from utils.highlight_handling import (
         get_full_context_from_highlight,
@@ -24,7 +26,8 @@ from utils.toc_handling import (
     get_table_of_contents_from_epub,
     retrieve_clean_href,
     get_dict_of_href_and_title_from_toc,
-    match_highlight_section_to_chapter
+    match_highlight_section_to_chapter,
+    get_previous_chapter_from_section
 )
 
 TEST_BOOKS_DIR = 'test_books/'
@@ -34,6 +37,7 @@ TEST_EPUB_BURN = 'burn.epub'
 TEST_EPUB_HOWTO = 'howto.epub'
 TEST_EPUB_SCATTERED = 'scattered_minds.epub'
 TEST_EPUB_APRENDENDO = 'aprendendo.epub'
+TEST_EPUB_SHALLOWS = 'shallows.epub'
 
 
 class TestingKoboDatabase(unittest.TestCase):
@@ -225,6 +229,7 @@ modifier: kobogarden
 modified: {formatted_now}
 tags: book-quote [[{book}]] test [[another test]]
 title: {title}
+chapter: 
 type: text/vnd.tiddlywiki
 quote-order: 01
 
@@ -254,6 +259,14 @@ class TestingBookTableOfContents(unittest.TestCase):
         book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SCATTERED)
         self.assertEqual(match_highlight_section_to_chapter(section, book_toc), '10 The Footprints of Infancy')
 
+    # HOWTO has the best mapping so far, and this test ensures any further changes
+    # will not break the mapping;
+    def test_can_create_full_toc_from_howto_book(self):
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_HOWTO)
+        self.assertEqual(
+            get_dict_of_href_and_title_from_toc(book_toc),
+            {'xhtml/Odel_9781612197500_epub3_cvi_r1.xhtml': 'Cover', 'xhtml/Odel_9781612197500_epub3_tp_r1.xhtml': 'Title Page', 'xhtml/Odel_9781612197500_epub3_cop_r1.xhtml': 'Copyright', 'xhtml/Odel_9781612197500_epub3_ded_r1.xhtml': 'Dedication', 'xhtml/Odel_9781612197500_epub3_toc_r1.xhtml': 'Contents', 'xhtml/Odel_9781612197500_epub3_itr_r1.xhtml': 'Introduction: Surviving Usefulness', 'xhtml/Odel_9781612197500_epub3_c01_r1.xhtml': 'Chapter 1: The Case for Nothing', 'xhtml/Odel_9781612197500_epub3_c02_r1.xhtml': 'Chapter 2: The Impossibility of Retreat', 'xhtml/Odel_9781612197500_epub3_c03_r1.xhtml': 'Chapter 3: Anatomy of a Refusal', 'xhtml/Odel_9781612197500_epub3_c04_r1.xhtml': 'Chapter 4: Exercises in Attention', 'xhtml/Odel_9781612197500_epub3_c05_r1.xhtml': 'Chapter 5: Ecology of Strangers', 'xhtml/Odel_9781612197500_epub3_c06_r1.xhtml': 'Chapter 6: Restoring the Grounds for Thought', 'xhtml/Odel_9781612197500_epub3_con_r1.xhtml': 'Conclusion: Manifest Dismantling', 'xhtml/Odel_9781612197500_epub3_ack_r1.xhtml': 'Acknowledgments', 'xhtml/Odel_9781612197500_epub3_end_r1.xhtml': 'Notes'})
+
     def test_can_match_highlight_with_a_chapter(self):
         HIGHLIGHT_ID = "871ca40f-3d58-4fff-be19-400e700bdad6"
         title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
@@ -267,6 +280,32 @@ class TestingBookTableOfContents(unittest.TestCase):
         book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_APRENDENDO)
         parsed_dict = get_dict_of_href_and_title_from_toc(book_toc)
         self.assertEqual(True, False)
+
+    # 24/04/17: SHALLOWS has some issues with mapping chapters.
+    def test_can_create_full_toc_from_shallows_book(self):
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SHALLOWS)
+        self.assertEqual(
+            get_dict_of_href_and_title_from_toc(book_toc),
+            {'The_Shallows_split_009.html': 'THE WATCHDOG AND THE THIEF', 'The_Shallows_split_010.html': 'HAL AND ME', 'The_Shallows_split_011.html': 'THE VITAL PATHS', 'The_Shallows_split_012.html': 'on what the brain thinks about when it thinks about itself', 'The_Shallows_split_013.html': 'TOOLS OF THE MIND', 'The_Shallows_split_015.html': 'THE DEEPENING PAGE', 'The_Shallows_split_016.html': 'on lee de forest and his amazing audion', 'The_Shallows_split_017.html': 'A MEDIUM OF THE MOST GENERAL NATURE', 'The_Shallows_split_018.html': 'THE VERY IMAGE OF A BOOK', 'The_Shallows_split_019.html': 'THE JUGGLER’S BRAIN', 'The_Shallows_split_021.html': 'on the buoyancy of IQ scores', 'The_Shallows_split_022.html': 'THE CHURCH OF GOOGLE', 'The_Shallows_split_024.html': 'SEARCH, MEMORY', 'The_Shallows_split_025.html': 'on the writing of this book', 'The_Shallows_split_026.html': 'A THING LIKE ME', 'The_Shallows_split_027.html': 'HUMAN ELEMENTS', 'The_Shallows_split_029.html': 'Notes', 'The_Shallows_split_030.html': 'Further Reading', 'The_Shallows_split_031.html': 'Acknowledgments'})
+
+    def test_can_retrieve_the_preceding_chapter(self):
+        SECTION = "The_Shallows_split_014.html#point(/1/4/4/8/1:446)"
+        clean_section = retrieve_clean_href(SECTION)
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SHALLOWS)
+        toc_dict = get_dict_of_href_and_title_from_toc(book_toc)
+        self.assertEqual(get_previous_chapter_from_section(clean_section, toc_dict), 'The_Shallows_split_013.html')
+
+    # 24/04/17: SHALLOWS has some issues with mapping chapters.
+    # the following highlight comes from 'The_Shallows_split_014.html#point(/1/4/4/8/1:446)';
+    # but the chapter is not in the `.epub` toc file;
+    # I'm not sure whether this will repeat with other books.
+    # A solution could be to map the highlight with no chapter to the preceding chapter.
+    def test_can_map_shallows_highlight_to_chapter(self):
+        HIGHLIGHT_ID = "a3c65f89-bfd4-49b5-a92c-3f2fb1542229"
+        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SHALLOWS)
+        self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'TOOLS OF THE MIND')
+
 
 
 
