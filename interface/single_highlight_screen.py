@@ -32,6 +32,7 @@ from utils.toc_handling import (
     get_table_of_contents_from_epub,
     match_highlight_section_to_chapter
         )
+from utils.logging import logging
 
 
 class TiddlerInformationWidget(Widget, can_focus=True):
@@ -249,10 +250,16 @@ class SingleHighlightsScreen(Screen):
     }
     """
 
-    def __init__(self, name: str, menu_option: tuple[str, Option]) -> None:
+    def __init__(self, name: str, book_option: str = None, highlight_option: str = None, highlight_option_id: int = None) -> None:
         super().__init__(name)
-        self.highlight_id = menu_option[1].id
+        self.book_option = book_option
+        self.highlight_option = highlight_option
+        self.highlight_option_id = highlight_option_id
+        logging.debug(f"options are: \n{self.book_option}\n{self.highlight_option}")
+        self.highlight_id = highlight_option.id
+        # TODO this is CSS should not be here
         self.styles.layout = 'horizontal'
+        # TODO refactor this part
         info = get_highlight_from_database(self.highlight_id)
         self.book_name, self.author, _, _, section, path = info
         book_toc = get_table_of_contents_from_epub(BOOKS_DIR + path)
@@ -276,8 +283,10 @@ class SingleHighlightsScreen(Screen):
     def on_key(self, event: events.Key) -> None:
         # return to the book highlight screen
         if event.key == "q":
-            # TODO this is not working
-            self.dismiss(['X', self.highlight_id])
+            logging.debug(f"quit S.HIGH screen with\n{self.book_option}\n{self.highlight_option}")
+            self.dismiss(['B', {"book_option": self.book_option,
+                                "highlight_option": self.highlight_option,
+                                "highlight_option_id": self.highlight_option_id}])
         if event.key == "b":
             self.query_one(SingleHighlightWidget).extend_quote_above()
         if event.key == "B":

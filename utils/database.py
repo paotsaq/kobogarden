@@ -11,6 +11,7 @@ def create_connection_to_database(path: str) -> sqlite3.Connection:
 
 
 def get_book_filename_from_book_name(book_name: str) -> str:
+    print("BOOK NAME IS ", book_name)
     conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
     c = conn.cursor()
     c.execute(f"""SELECT BookId from content where BookTitle="{book_name}";""")
