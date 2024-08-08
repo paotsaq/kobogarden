@@ -6,6 +6,30 @@ from utils.const import (
         )
 
 
+def produce_fhl_tiddler_string(
+        created_timestamp: str,
+        book: str,
+        ) -> str:
+    """The function is only responsible for creating
+    the full highlights list tiddler;
+    """
+    return f"""created: {created_timestamp}
+creator: kobogarden
+created: {created_timestamp}
+modifier: kobogarden
+modified: {created_timestamp}
+tags: fhl
+title: fhl-{book}
+type: text/vnd.tiddlywiki
+
+\\import [tag[macro]]
+
+<$list filter="[tag[book-quote]tag[{book}]sort[quote-order]]">
+   <$macrocall $name="renderClickableTitle" tiddler=<<currentTiddler>> />
+</$list>
+"""
+
+
 def produce_book_tiddler_string(
         created_timestamp: str,
         book: str,
@@ -29,9 +53,15 @@ type: text/vnd.tiddlywiki
 
 \\import [tag[macro]]
 
-<$list filter="[tag<currentTiddler>sort[quote-order]]">
-   <$macrocall $name="renderTitleAndContent" tiddler=<<currentTiddler>> />
-</$list>
+//[the notes from the book were retrieved with [[kobogarden]], with the purpose of aiding to create a map of the ideas the book left me. The full list of book highlights can be found [[here|fhl-{book}]].]//
+
+<div style="float: left; margin: 0 40px 8px 0;
+                  width: 30%;
+                  justify-content: space-between;
+                  align-content: space-between;
+                  max-width: 200px">
+<$image source={{!!book-cover-tiddler}}/>
+</div>
 """
 
 
@@ -44,9 +74,14 @@ def create_book_tiddler(
         book_author: str
         ) -> None:
     formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
-    content = produce_book_tiddler_string(formatted_now, book_title, book_author)
+    book_content = produce_book_tiddler_string(formatted_now, book_title, book_author)
+    fhl_content = produce_fhl_tiddler_string(formatted_now, book_title)
     with open(TIDDLERS_PATH + book_title + '.tid', 'w') as file:
-        file.write(content)
+        file.write(book_content)
+    print("Created book tiddler: " + book_title)
+    with open(TIDDLERS_PATH + 'fhl-' + book_title + '.tid', 'w') as file:
+        file.write(fhl_content)
+    print("Created fhl tiddler: " + book_title)
 
 
 def increment_book_tiddler_highlight_number(book_title: str) -> int:
