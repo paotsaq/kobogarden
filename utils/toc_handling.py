@@ -43,7 +43,9 @@ def get_dict_of_href_and_title_from_toc(toc):
                         clean = retrieve_clean_href(sub_elem.href)
                         if clean:
                             all_refs[clean] = sub_elem.title
+
     return all_refs
+
 
 # retrieves the preceding chapter from the table of contents
 def get_previous_chapter_from_section(section: str, toc: dict) -> str:
@@ -52,9 +54,13 @@ def get_previous_chapter_from_section(section: str, toc: dict) -> str:
     return sorted_toc_sections[i - 1]
 
 
-
 def match_highlight_section_to_chapter(section: str, toc) -> str | None:
     href_title_dict = get_dict_of_href_and_title_from_toc(toc)
+    # 24/08/08: for STRANGERS, the section needed the OEBPS
+    if '#' in section:
+        split_section = section.split('#')[0]
+        if split_section in href_title_dict.keys():
+            return href_title_dict[split_section]
     clean_section = retrieve_clean_href(section)
     if clean_section in href_title_dict.keys():
         return href_title_dict[clean_section]

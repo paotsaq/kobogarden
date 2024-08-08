@@ -38,6 +38,7 @@ TEST_EPUB_HOWTO = 'howto.epub'
 TEST_EPUB_SCATTERED = 'scattered_minds.epub'
 TEST_EPUB_APRENDENDO = 'aprendendo.epub'
 TEST_EPUB_SHALLOWS = 'shallows.epub'
+TEST_EPUB_STRANGERS = 'strangers.epub'
 
 
 class TestingKoboDatabase(unittest.TestCase):
@@ -273,13 +274,6 @@ class TestingBookTableOfContents(unittest.TestCase):
         book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_HOWTO)
         self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'Introduction: Surviving Usefulness')
 
-    # APRENDENDO has no information; it's TOC has a different structure
-    def test_can_retrieve_chapter_info_from_another_book(self):
-        HIGHLIGHT_ID = "edaa00fc-4a15-4c86-99d4-f9176e3fdacf"
-        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
-        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_APRENDENDO)
-        parsed_dict = get_dict_of_href_and_title_from_toc(book_toc)
-        self.assertEqual(True, False)
 
     # 24/04/17: SHALLOWS has some issues with mapping chapters.
     def test_can_create_full_toc_from_shallows_book(self):
@@ -305,6 +299,22 @@ class TestingBookTableOfContents(unittest.TestCase):
         title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
         book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_SHALLOWS)
         self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'TOOLS OF THE MIND')
+
+    # 24/08/08: there have been issues with other chapters in books
+    def test_can_map_strangers_highlight_to_chapter(self):
+        HIGHLIGHT_ID = "458ea2c3-f589-431e-a10d-e03de57adeac"
+        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_STRANGERS)
+        self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'Prologue: Rachel: “Someone better than me”')
+
+    # 
+    def test_can_map_aprendendo_highlight_to_chapter(self):
+        HIGHLIGHT_ID = "edaa00fc-4a15-4c86-99d4-f9176e3fdacf"
+        title, _, highlight, _, section, path = (x := get_highlight_from_database(HIGHLIGHT_ID))
+        book_toc = get_table_of_contents_from_epub(TEST_BOOKS_DIR + TEST_EPUB_APRENDENDO)
+        parsed_dict = get_dict_of_href_and_title_from_toc(book_toc)
+        self.assertEqual(match_highlight_section_to_chapter(section, book_toc), 'Prologue: Rachel: “Someone better than me”')
+
 
 
 
