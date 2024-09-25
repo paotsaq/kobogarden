@@ -287,24 +287,29 @@ class SingleHighlightsScreen(Screen):
             self.dismiss(['B', {"book_option": self.book_option,
                                 "highlight_option": self.highlight_option,
                                 "highlight_option_id": self.highlight_option_id}])
-        if event.key == "b":
-            self.query_one(SingleHighlightWidget).extend_quote_above()
-        if event.key == "B":
-            self.query_one(SingleHighlightWidget).contract_quote_above()
-        if event.key == "f":
-            self.query_one(SingleHighlightWidget).extend_quote_below()
-        if event.key == "F":
-            self.query_one(SingleHighlightWidget).contract_quote_below()
-        if event.key == "j":
-            self.query_one(SingleHighlightWidget).extend_quote_above(True)
-        if event.key == "J":
-            self.query_one(SingleHighlightWidget).contract_quote_above(True)
-        if event.key == "k":
-            self.query_one(SingleHighlightWidget).extend_quote_below(True)
-        if event.key == "K":
-            self.query_one(SingleHighlightWidget).contract_quote_below(True)
-        if event.key == "t":
-            print(self.highlight)
+        elif event.key == "t":
+            logging.debug(self.highlight)
+        else:
+            try:
+                if event.key == "b":
+                    self.query_one(SingleHighlightWidget).extend_quote_above()
+                if event.key == "B":
+                    self.query_one(SingleHighlightWidget).contract_quote_above()
+                if event.key == "f":
+                    self.query_one(SingleHighlightWidget).extend_quote_below()
+                if event.key == "F":
+                    self.query_one(SingleHighlightWidget).contract_quote_below()
+                if event.key == "j":
+                    self.query_one(SingleHighlightWidget).extend_quote_above(True)
+                if event.key == "J":
+                    self.query_one(SingleHighlightWidget).contract_quote_above(True)
+                if event.key == "k":
+                    self.query_one(SingleHighlightWidget).extend_quote_below(True)
+                if event.key == "K":
+                    self.query_one(SingleHighlightWidget).contract_quote_below(True)
+            except IndexError:
+                pass
+
 
     def on_single_highlight_widget_send_quote(
             self,
