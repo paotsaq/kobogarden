@@ -5,6 +5,13 @@ from utils.const import (
     EXISTING_IDS_FILE
         )
 
+try:
+    import pyperclip
+    HAS_CLIPBOARD = True
+except ImportError:
+    HAS_CLIPBOARD = False
+    print("Warning: pyperclip not installed. Clipboard functionality will be disabled.")
+
 
 def produce_fhl_tiddler_string(
         created_timestamp: str,
@@ -69,16 +76,37 @@ def book_tiddler_exists(book_title: str) -> bool:
     return book_title + '.tid' in listdir(TIDDLERS_PATH)
 
 
+def tiddler_exists(tiddler_title: str) -> bool:
+    """Check if a tiddler with the given title exists"""
+    return (tiddler_title + '.tid') in listdir(TIDDLERS_PATH)
+
+
+def copy_to_clipboard(text: str) -> None:
+    """Copy text to clipboard if pyperclip is available"""
+    if HAS_CLIPBOARD:
+        try:
+            pyperclip.copy(text)
+            print(f"Copied to clipboard: {text}")
+        except Exception as e:
+            print(f"Failed to copy to clipboard: {e}")
+
+
 def create_book_tiddler(
         book_title: str,
         book_author: str
         ) -> None:
+    if tiddler_exists(book_title):
+        print(f"Warning: Tiddler '{book_title}' already exists!")
+        return
+        
     formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
     book_content = produce_book_tiddler_string(formatted_now, book_title, book_author)
     fhl_content = produce_fhl_tiddler_string(formatted_now, book_title)
     with open(TIDDLERS_PATH + book_title + '.tid', 'w') as file:
         file.write(book_content)
     print("Created book tiddler: " + book_title)
+    copy_to_clipboard(book_title)
+    
     with open(TIDDLERS_PATH + 'fhl-' + book_title + '.tid', 'w') as file:
         file.write(fhl_content)
     print("Created fhl tiddler: " + book_title)
@@ -124,9 +152,7 @@ title: {highlight_title}
 chapter: {chapter}
 type: text/vnd.tiddlywiki
 quote-order: {'0' if quote_order < 10 else ''}{str(quote_order)}
-
-{comment}
-
+{"\n" + comment + "\n" if comment else "" }
 <<<
 {highlight}
 <<<
@@ -142,3 +168,50 @@ def add_highlight_id_to_record(highlight_id: str) -> None:
     """This function doesn't check whether the highlight already exists!"""
     with open(TIDDLERS_PATH + EXISTING_IDS_FILE, "a") as file:
         file.write('\n\n' + highlight_id + '\n\n')
+
+
+def create_highlight_tiddler(
+        title: str,
+        book_title: str,
+        author: str,
+        tags: list[str],
+        comment: str,
+        highlight_text: str,
+        chapter: str = ""
+        ) -> bool:
+    """Create a highlight tiddler with the given parameters.
+    Returns True if tiddler was created, False if it already exists."""
+    
+    if tiddler_exists(title):
+        print(f"Warning: Tiddler '{title}' already exists!")
+        return False
+
+    # Access or create book tiddler, and retrieve the `highlight_order`
+    if book_tiddler_exists(book_title):
+        highlight_order = increment_book_tiddler_highlight_number(book_title)
+    else:
+        create_book_tiddler(book_title, author)
+        highlight_order = 1
+
+    # Remove the last 3 digits of microseconds
+    formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+
+    # Creates the tiddler string
+    tiddler = produce_highlight_tiddler_string(
+            formatted_now,
+            [book_title] + tags,
+            title,
+            comment,
+            highlight_text,
+            highlight_order,
+            chapter
+            )
+
+    # Writes the new tiddler file
+    with open(TIDDLERS_PATH + title + '.tid', "w") as file:
+        file.write(tiddler)
+
+    # Copy title to clipboard
+    copy_to_clipboard(title)
+    
+    return True

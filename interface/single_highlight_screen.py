@@ -18,10 +18,12 @@ from utils.database import (
         )
 from utils.tiddler_handling import (
     add_highlight_id_to_record,
-    produce_highlight_tiddler_string,
+    create_highlight_tiddler,
     book_tiddler_exists,
     create_book_tiddler,
-    increment_book_tiddler_highlight_number
+    increment_book_tiddler_highlight_number,
+    tiddler_exists,
+    copy_to_clipboard
 )
 from utils.highlight_handling import (
         get_full_context_from_highlight,
@@ -68,33 +70,17 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         if self.highlight_title.value == "" or self.edited_quote == "":
             return
 
-        # Access or create book tiddler, and retrieve the `highlight_order`
-        if book_tiddler_exists(self.book_name):
-            highlight_order = increment_book_tiddler_highlight_number(self.book_name)
-        else:
-            create_book_tiddler(self.book_name, self.author)
-            highlight_order = 1
-
-        # Remove the last 3 digits of microseconds
-        formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
-
-        # Creates the tiddler string
-        tiddler = produce_highlight_tiddler_string(
-                formatted_now,
-                ([self.book_name] +
-                 self.highlight_tags.value.split()),
+        # Create the highlight tiddler
+        if create_highlight_tiddler(
                 self.highlight_title.value,
+                self.book_name,
+                self.author,
+                self.highlight_tags.value.split(),
                 self.highlight_notes.value,
                 self.edited_quote,
-                highlight_order,
-                self.chapter
-                )
+                self.chapter):
+            add_highlight_id_to_record(self.highlight_id)
 
-        # Writes the new tiddler file
-        with open(TIDDLERS_PATH + self.highlight_title.value + '.tid', "w") as file:
-            file.write(tiddler)
-
-        add_highlight_id_to_record(self.highlight_id)
 
 
 class SingleHighlightWidget(
