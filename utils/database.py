@@ -1,4 +1,5 @@
 import sqlite3
+
 from utils.const import (
     SQLITE_DB_PATH,
     SQLITE_DB_NAME,
@@ -29,6 +30,16 @@ def get_all_highlights_of_book_from_database(
         ) -> list[str]:
     conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
     c = conn.cursor()
+    # First get the ContentID for this book
+    c.execute(f"""
+    SELECT ContentID
+    FROM content 
+    WHERE Title="{book_name}" AND ContentType=6
+    LIMIT 1
+    """)
+    content_id = c.fetchone()[0]
+    
+    # Then get all highlights for this specific ContentID
     c.execute(f"""
     SELECT
     Bookmark.Text,
@@ -39,7 +50,7 @@ def get_all_highlights_of_book_from_database(
     LEFT OUTER JOIN content
     ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
     WHERE
-    content.Title="{book_name}"
+    content.ContentID="{content_id}"
     ORDER BY Bookmark.DateCreated
     """)
     content = c.fetchall()
@@ -91,24 +102,32 @@ def get_list_of_highlighted_books(
     conn = create_connection_to_database(sqlite_db_path)
     c = conn.cursor()
     c.execute("""
-    SELECT
-        unique_book_titles.BookTitle,
-        content.Attribution,
-        content.ContentID
-    FROM
-        (SELECT DISTINCT content.title as BookTitle
+    WITH LatestHighlights AS (
+        SELECT 
+            content.ContentID,
+            MAX(Bookmark.DateCreated) as LastHighlightDate
         FROM "Bookmark"
         LEFT OUTER JOIN content
-        ON (content.contentID=Bookmark.VolumeID and content.ContentType=6))
-            as unique_book_titles
+        ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
+        GROUP BY content.ContentID
+    )
+    SELECT DISTINCT
+        content.Title as BookTitle,
+        content.Attribution,
+        content.ContentID,
+        lh.LastHighlightDate
+    FROM "Bookmark"
     LEFT OUTER JOIN content
-    ON unique_book_titles.BookTitle = content.Title
+    ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
+    LEFT OUTER JOIN LatestHighlights lh
+    ON content.ContentID = lh.ContentID
     WHERE content.Attribution IS NOT NULL
+    ORDER BY lh.LastHighlightDate DESC
     """)
     results = c.fetchall()  # Fetch all results
     conn.close()
     parsed = [
             [title, author, take_epub_file_name_from_path(file)]
-            for title, author, file in results
+            for title, author, file, _ in results
             ]
     return parsed
