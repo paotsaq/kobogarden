@@ -110,7 +110,11 @@ def expand_found_highlight(
     # decide whether to look for first or last sentence of highlight
     anchor = 0 if backwards else -1
     broken_soup = break_string_into_list_of_sentences(soup)
-    highlight_location = broken_soup.index(highlight_to_expand[anchor])
-    return (broken_soup[highlight_location - amount_of_sentences:highlight_location]
-            if backwards
-            else broken_soup[highlight_location + 1:highlight_location + 1 + amount_of_sentences])
+    try: 
+        highlight_location = broken_soup.index(highlight_to_expand[anchor])
+        return (broken_soup[highlight_location - amount_of_sentences:highlight_location]
+                if backwards
+                else broken_soup[highlight_location + 1:highlight_location + 1 + amount_of_sentences])
+    except IndexError:
+        return highlight_to_expand
+

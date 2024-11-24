@@ -51,14 +51,15 @@ class BookHighlightsScreen(Screen):
             highlight_id: str,
             container_path: str,
             book_toc: str) -> Table:
-        chapter = match_highlight_section_to_chapter(container_path, book_toc)
-        table = Table(show_header=False)
-        table.add_row(date.split('T')[0] + ' | ' +
-                      str('✅' if record_in_highlight_id(highlight_id)
-                          else '❌') +
-                      (' | ' + chapter if chapter else ''))
-        table.add_row(highlight.strip())
-        return Option(table, id=highlight_id)
+        if highlight:
+            chapter = match_highlight_section_to_chapter(container_path, book_toc)
+            table = Table(show_header=False)
+            table.add_row(date.split('T')[0] + ' | ' +
+                          str('✅' if record_in_highlight_id(highlight_id)
+                              else '❌') +
+                          (' | ' + chapter if chapter else ''))
+            table.add_row(highlight.strip())
+            return Option(table, id=highlight_id)
 
     def compose(self) -> ComposeResult:
         highlights = [self.highlight_generator(*highlight_info,
