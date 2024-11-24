@@ -1,12 +1,13 @@
 from datetime import datetime
 from textual.app import ComposeResult
 from textual.widget import Widget
-from textual.widgets import Footer, Header, Input, Button
+from textual.widgets import Footer, Header, Input, Button, Label, TextArea
 from textual import events
 from textual.message import Message
 from textual.screen import Screen
 from textual.reactive import reactive
-from textual.containers import VerticalScroll, Vertical
+from textual.containers import VerticalScroll, Vertical, ScrollableContainer
+from textual.binding import Binding
 from textual.widgets.option_list import Option
 from rich.text import Text
 from utils.const import (
@@ -38,23 +39,27 @@ from utils.logging import logging
 
 
 class TiddlerInformationWidget(Widget, can_focus=True):
-    edited_quote = reactive("")
+    """Widget that shows information about a highlight and allows to create a tiddler."""
+
+    BINDINGS = [
+        Binding("enter", "create_tiddler", "Create Tiddler", show=False)
+    ]
 
     def __init__(self,
                  book_name: str,
                  author: str,
-                 highlight_id: int,
-                 chapter: str
-                 ) -> None:
+                 highlight_id: str,
+                 chapter: str = ""):
         super().__init__()
         self.book_name = book_name
         self.author = author
         self.highlight_id = highlight_id
         self.chapter = chapter
+        self.edited_quote = reactive("")
 
     def compose(self) -> ComposeResult:
-        self.highlight_notes = Input(classes='highlight_input',
-                                     placeholder='further notes about the quote?')
+        """Create child widgets of a stopwatch."""
+        self.highlight_notes = TextArea(classes='highlight_input')
         self.highlight_title = Input(classes='highlight_input',
                                      placeholder='title for the quote tiddler?')
         self.highlight_tags = Input(classes='highlight_input',
@@ -62,11 +67,25 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         yield self.highlight_title
         yield self.highlight_notes
         yield self.highlight_tags
-        yield Button("Create tiddler!",
-                     variant="success")
+        self.create_button = Button("Create tiddler!", variant="success")
+        yield self.create_button
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        # TODO this should be better handled
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button press event."""
+        await self._create_tiddler()
+
+    async def action_create_tiddler(self) -> None:
+        """Handle the enter key binding."""
+        await self._create_tiddler()
+
+    async def on_key(self, event: events.Key) -> None:
+        """Handle key events."""
+        if event.key == "enter":
+            event.prevent_default()
+            await self._create_tiddler()
+
+    async def _create_tiddler(self) -> None:
+        """Create a new tiddler with the current input values."""
         if self.highlight_title.value == "" or self.edited_quote == "":
             return
 
@@ -76,10 +95,27 @@ class TiddlerInformationWidget(Widget, can_focus=True):
                 self.book_name,
                 self.author,
                 self.highlight_tags.value.split(),
-                self.highlight_notes.value,
+                self.highlight_notes.text,
                 self.edited_quote,
                 self.chapter):
             add_highlight_id_to_record(self.highlight_id)
+            # Update button to show success
+            self.create_button.label = "✓ Tiddler Created!"
+            
+            # Reset button text after 2 seconds
+            async def reset_button() -> None:
+                self.create_button.label = "Create tiddler!"
+            
+            self.set_timer(2, reset_button)
+        else:
+            # Show error state
+            self.create_button.label = "⚠ Tiddler already exists!"
+            
+            # Reset button text after 2 seconds
+            async def reset_button() -> None:
+                self.create_button.label = "Create tiddler!"
+            
+            self.set_timer(2, reset_button)
 
 
 
