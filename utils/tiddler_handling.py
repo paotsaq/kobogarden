@@ -199,7 +199,7 @@ class TiddlerFilenameManager:
                         return title.strip(), author.strip()
         
         # If no mapping found, return original parsed
-        return self._parse_original_name(original_filename)
+        return None, None
     
     def _clean_filename(self, filename: str) -> str:
         """Remove extension and clean up the filename for comparison"""

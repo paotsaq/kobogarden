@@ -58,7 +58,11 @@ class BookHighlightsScreen(Screen):
         # Get latest metadata from TiddlerFilenameManager
         manager = TiddlerFilenameManager()
         manager.refresh_metadata()
-        title, author = manager.get_mapped_metadata(book_metadata["filename"])
+        mapped_title, mapped_author = manager.get_mapped_metadata(book_metadata["filename"])
+        
+        # Use mapped values if available, otherwise use original metadata
+        title = mapped_title if mapped_title is not None else book_metadata.get("title", "")
+        author = mapped_author if mapped_author is not None else book_metadata.get("author", "")
         
         # Update metadata with latest info from mappings file
         self.book_metadata = {
@@ -66,6 +70,9 @@ class BookHighlightsScreen(Screen):
             "title": title,
             "author": author
         }
+        
+        # Set the screen's subtitle to show book info
+        self.sub_title = f"{title} by {author}"
         
         logging.debug(f"Initializing BookHighlightsScreen with metadata: {self.book_metadata}")
         self.highlight_option = highlight_option
