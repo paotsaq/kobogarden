@@ -1,5 +1,5 @@
 from textual.app import ComposeResult
-from textual.widgets import OptionList, Static
+from textual.widgets import OptionList, Static, Header
 from textual import events
 from textual.screen import Screen
 from textual.widgets.option_list import Option
@@ -40,19 +40,23 @@ class BookHighlightsScreen(Screen):
         # ... your existing bindings ...
     ]
 
-    def __init__(self, name: str, book_option, book_metadata: dict, check_quit_callback=None):
+    def __init__(self, name: str,
+                 book_option,
+                 book_metadata: dict,
+                 highlight_option: Option | None = None,
+                 highlight_option_id: int | None = None):
         """
         Args:
             name: Screen name
             book_option: Selected book option from the list
-            check_quit_callback: Optional callback for checking quit conditions
+            highlight_option: Selected highlight option from the list
         """
         super().__init__(name)
         self.book_option = book_option
-        self.check_quit_callback = check_quit_callback
         self.book_metadata = book_metadata
         logging.debug(f"Initializing BookHighlightsScreen with metadata: {book_metadata}")
-        self.highlight_option_id = None
+        self.highlight_option = highlight_option
+        self.highlight_option_id = highlight_option_id
         
         try:
             # Load highlights from database
@@ -60,7 +64,7 @@ class BookHighlightsScreen(Screen):
             if not self.highlights:
                 logging.info(f"No highlights found for book: {self.book_metadata['title']}")
                 self.highlights = []
-            self.book_toc = get_table_of_contents_from_epub(self.book_metadata["filename"])
+            self.book_toc = get_table_of_contents_from_epub(BOOKS_DIR + self.book_metadata["filename"])
         except BookNotFoundError as e:
             logging.error(f"Book not found: {str(e)}")
             self.original_filename = None
@@ -105,6 +109,7 @@ class BookHighlightsScreen(Screen):
             selected_highlight_option = self.quotes_list._options[self.quotes_list.highlighted]
             self.dismiss(['H', {
                 "book_option": self.book_option,
+                "book_metadata": self.book_metadata,
                 "highlight_option": selected_highlight_option,
                 "highlight_option_id": self.quotes_list.highlighted
                                 }])

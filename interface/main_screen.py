@@ -4,7 +4,7 @@ from textual.widgets import Header, Footer, OptionList
 from textual.widgets.option_list import Option
 from interface.book_highlights_screen import BookHighlightsScreen
 from interface.single_highlight_screen import (
-    SingleHighlightsScreen,
+    SingleHighlightScreen,
         )
 from utils.const import (
     DATABASE_PATH,
@@ -22,15 +22,6 @@ class BookList(OptionList):
 
     def __init__(self, *options: Option) -> None:
         super().__init__(*options)
-
-
-# class BookOption(Option):
-
-    # def __init__(self) -> None:
-        # super().__init__()
-
-    # def __repr__(self):
-        # return
 
 
 class MainScreen(App[None]):
@@ -75,7 +66,7 @@ class MainScreen(App[None]):
             next_screen, content = options
             logging.debug(f"screen_callback_content:\n{content}")
             if next_screen == 'H':
-                self.push_screen(SingleHighlightsScreen("single_highlight", **content),
+                self.push_screen(SingleHighlightScreen("single_highlight", **content),
                                  check_highlights_panel_quit)
             # move from specific highlight to book highlights screen
             elif next_screen == 'B':
@@ -87,5 +78,6 @@ class MainScreen(App[None]):
             selected_book_index = self.book_list.highlighted
             selected_book_option = self.book_list._options[selected_book_index]
             self.push_screen(BookHighlightsScreen("book_highlights",
-                                                  selected_book_option),
+                                                  selected_book_option,
+                                                  self.books_metadata[selected_book_option.prompt]),
                              check_highlights_panel_quit)

@@ -264,7 +264,7 @@ class SingleHighlightWidget(
                         self.soup, 1, False)
 
 
-class SingleHighlightsScreen(Screen):
+class SingleHighlightScreen(Screen):
     CSS = """
     #display, #controls {
         width: 1fr;
@@ -272,9 +272,14 @@ class SingleHighlightsScreen(Screen):
     }
     """
 
-    def __init__(self, name: str, book_option: str = None, highlight_option: str = None, highlight_option_id: int = None) -> None:
+    def __init__(self, name: str,
+                 book_option: str = None,
+                 book_metadata: dict = None,
+                 highlight_option: str = None,
+                 highlight_option_id: int = None) -> None:
         super().__init__(name)
         self.book_option = book_option
+        self.book_metadata = book_metadata
         self.highlight_option = highlight_option
         self.highlight_option_id = highlight_option_id
         logging.debug(f"options are: \n{self.book_option}\n{self.highlight_option}")
@@ -306,9 +311,12 @@ class SingleHighlightsScreen(Screen):
         # return to the book highlight screen
         if event.key == "q":
             logging.debug(f"quit S.HIGH screen with\n{self.book_option}\n{self.highlight_option}")
-            self.dismiss(['B', {"book_option": self.book_option,
-                                "highlight_option": self.highlight_option,
-                                "highlight_option_id": self.highlight_option_id}])
+            self.dismiss(['B', {
+                "book_option": self.book_option,
+                "book_metadata": self.book_metadata,
+                "highlight_option": self.highlight_option,
+                "highlight_option_id": self.highlight_option_id
+                                }])
         elif event.key == "t":
             logging.debug(self.highlight)
         else:
