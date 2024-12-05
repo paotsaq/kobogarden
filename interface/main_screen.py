@@ -43,14 +43,28 @@ class MainScreen(App[None]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
         self.current_book = None
+        self.books = get_list_of_highlighted_books(DATABASE_PATH)
+        self.books_metadata = {
+            f"{title} by {author}": {
+                "title": title,
+                "author": author,
+                "filename": filename
+            }
+            for title, author, filename in self.books
+        }
+        logging.debug(f"Initialized MainScreen with {len(self.books)} books")
+        self.selected_highlight = None  # Store selected highlight info
 
     def compose(self) -> ComposeResult:
-        books = [Option(f'{title} by {author}', id=title) for title, author, _
-                 in get_list_of_highlighted_books(DATABASE_PATH)]
+    # Create options using the same display format
+        self.book_options = [
+            Option(f"{title} by {author}", id=title)
+            for title, author, _ in self.books
+        ]
 
         # Store the OptionList instance as an attribute
         # self.option_list = BookList(*books)
-        self.book_list = BookList(*books)
+        self.book_list = BookList(*self.book_options)
         yield Header()
         yield self.book_list
         yield Footer()
