@@ -1,9 +1,10 @@
 import sqlite3
-
+from utils.logging import logging
 from utils.const import (
     SQLITE_DB_PATH,
     SQLITE_DB_NAME,
     )
+from utils.epub_validation import validate_epub_structure
 
 
 def create_connection_to_database(path: str) -> sqlite3.Connection:
@@ -63,7 +64,7 @@ def get_all_highlights_of_book_from_database(
 # highlight, container_path, epub file name"""
 def get_highlight_from_database(
         highlight_id: str
-        ) -> list[str]:
+        ) -> tuple:
     conn = create_connection_to_database(SQLITE_DB_PATH + SQLITE_DB_NAME)
     c = conn.cursor()
     c.execute(f"""
@@ -90,7 +91,11 @@ def get_highlight_from_database(
         raise FileNotFoundError
     conn.close()
     content[2] = content[2].strip()
-    return content
+    # Validate before returning
+    is_valid, error_msg = validate_epub_structure(fixed_path)
+    if not is_valid:
+        logging.warning(f"Book {fixed_path} has invalid structure: {error_msg}")
+    return (content[0], content[1], content[2], content[3], content[4], fixed_path)
 
 
 # returns a list of lists of three strings

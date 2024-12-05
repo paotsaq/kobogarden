@@ -1,12 +1,16 @@
-from bs4 import BeautifulSoup
 from ebooklib import epub
 import re
 from utils.const import (
         BOOKS_DIR
         )
+from utils.logging import logging
+from utils.epub_validation import (
+    get_full_context_from_highlight,
+    )
 from utils.database import (
     get_highlight_from_database,
-)
+    )
+from urllib.parse import unquote
 
 
 def get_index_of_sentence_in_sentences_list(
@@ -25,29 +29,6 @@ def break_string_into_list_of_sentences(string: str):
     pattern = r"(?<=[.!?])\s*(?=•|\w)"
     return re.split(pattern, string)
 
-
-# provides the full content of the .html file
-# in which a given highlight can be found. Highlights in Kobo
-# will carry information about the section in which they are.
-# Then, the highlight must be found inside the section
-# (and the section can be quite big).
-def get_full_context_from_highlight(
-        book_path: str,
-        section_path: str
-        ) -> str:
-    book = epub.read_epub(book_path, {"ignore_ncx": True})
-    if not book:
-        raise FileNotFoundError("The book doesn't seem to exist?")
-    section = None
-    i = 0
-    while section is None and i < 20:
-        section = book.get_item_with_href(section_path)
-        section_path = "/".join(section_path.split("/")[1:])
-        i += 1
-    if section is None:
-        return None
-    soup = BeautifulSoup(section.get_content(), 'html.parser').get_text()
-    return soup
 
 
 # NOTE the soup is the whole context of the quote.
@@ -95,6 +76,8 @@ def get_highlight_context_from_id(
     title, _, highlight, _, section, book_path = (
             get_highlight_from_database(highlight_id))
     soup = get_full_context_from_highlight(BOOKS_DIR + book_path, section.split('#')[0])
+    if soup is None:
+        return
     paragraphs = get_start_and_end_of_highlight(soup, highlight)
     return paragraphs
 
