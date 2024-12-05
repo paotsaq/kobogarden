@@ -1,6 +1,7 @@
 from os import listdir
 from datetime import datetime
 from utils.const import (
+    BOOKS_DIR,
     PAOGARDEN_DIR,
     TIDDLERS_PATH,
     EXISTING_IDS_FILE
@@ -9,6 +10,7 @@ from pathlib import Path
 import re
 from typing import Optional, Tuple
 from utils.logging import logging
+from utils.retrieve_cover_from_epub import extract_cover_from_epub
 
 try:
     import pyperclip
@@ -46,6 +48,7 @@ def produce_book_tiddler_string(
         created_timestamp: str,
         book: str,
         author: str,
+        cover_tiddler: Optional[str] = None
         ) -> str:
     """The function is only responsible for creating
     the book tiddler; it will be necessary to update the
@@ -59,6 +62,7 @@ modifier: kobogarden
 modified: {created_timestamp}
 tags: book
 title: {book}
+book-cover-tiddler: {cover_tiddler}
 author: {author}
 nbr_of_highlights: 1
 type: text/vnd.tiddlywiki
@@ -72,7 +76,7 @@ type: text/vnd.tiddlywiki
                   justify-content: space-between;
                   align-content: space-between;
                   max-width: 200px">
-<$image source={{!!book-cover-tiddler}}/>
+<<ximg "{cover_tiddler}">>
 </div>
 """
 
@@ -93,15 +97,30 @@ def copy_to_clipboard(text: str) -> None:
 
 def create_book_tiddler(
         book_title: str,
-        book_author: str
+        book_author: str,
+        book_filepath: str
         ) -> None:
     if check_tiddler_exists(book_title):
         logging.warning(f"Warning: Tiddler '{book_title}' already exists!")
         return
+    
+    # Try to extract cover image
+    epub_path = Path(BOOKS_DIR) / book_filepath
+    cover_tiddler = None
+    if epub_path.exists():
+        cover_tiddler = extract_cover_from_epub(str(epub_path), book_title)
+    else:
+        logging.debug(f"epub path {epub_path} wasn't found!")
         
     formatted_now = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
-    book_content = produce_book_tiddler_string(formatted_now, book_title, book_author)
+    book_content = produce_book_tiddler_string(
+        formatted_now,
+        book_title,
+        book_author,
+        cover_tiddler
+    )
     fhl_content = produce_fhl_tiddler_string(formatted_now, book_title)
+
     with open(TIDDLERS_PATH + book_title + '.tid', 'w') as file:
         file.write(book_content)
     logging.info("Created book tiddler: " + book_title)
@@ -223,6 +242,9 @@ class TiddlerFilenameManager:
     
     def update_metadata_mapping(self, original_filename: str, title: str, author: str) -> None:
         """Update or add a mapping in the mappings file"""
+        if check_tiddler_exists(title):
+            raise TiddlerExistsError(f"Tiddler with title '{title}' already exists")
+
         clean_original = self._clean_filename(original_filename)
         current_mappings = []
         
@@ -255,26 +277,23 @@ class TiddlerExistsError(TiddlerError):
 def create_highlight_tiddler(
         tiddler_title: str,
         highlight: str,
-        original_filename: str,
+        book_title: str,
+        book_author: str,
+        book_filepath: str,
         tags: list,
         comment: str = "",
         chapter: str = ""
         ) -> Optional[str]:
 
+    logging.debug(f"tiddler_title is {tiddler_title}")
     if check_tiddler_exists(tiddler_title):
         raise TiddlerExistsError(f"Tiddler with title '{tiddler_title}' already exists")
 
-    """Create a tiddler with filename-based metadata mapping.
-    This was implemented because we might have changed the author,
-    or title of a book. The filename is the only constant metadata"""
-    manager = TiddlerFilenameManager()
-    title, author = manager.get_mapped_metadata(original_filename)
-    
     # Access or create book tiddler, and retrieve the `highlight_order`
-    if check_tiddler_exists(title):
-        highlight_order = increment_book_tiddler_highlight_number(title)
+    if check_tiddler_exists(book_title):
+        highlight_order = increment_book_tiddler_highlight_number(book_title)
     else:
-        create_book_tiddler(title, author)
+        create_book_tiddler(book_title, book_author, book_filepath)
         highlight_order = 1
 
     
@@ -288,12 +307,14 @@ def create_highlight_tiddler(
         quote_order=highlight_order,
         chapter=chapter,
     )
+
+    logging.info(f"Created tiddler '{tiddler_title}' with highlight order {highlight_order}")
     
     # Save tiddler
     try:
-        with open(Path(TIDDLERS_PATH) / tiddler_title / '.tid', 'w') as f:
+        with open(Path(TIDDLERS_PATH) / (tiddler_title + '.tid'), 'w') as f:
             f.write(content)
         return tiddler_title
     except Exception as e:
-        logging.error(f"Failed to create tiddler: {e}")
+        logging.error(f"Failed to create tiddler '{tiddler_title}': {e}")
         return None

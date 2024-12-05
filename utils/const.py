@@ -4,6 +4,7 @@ BASE_DIR = '/home/apinto/'
 BOOKS_DIR = BASE_DIR + "books/"
 PAOGARDEN_DIR = BASE_DIR + "paogarden/"
 TIDDLERS_PATH = PAOGARDEN_DIR + "tiddlers/"
+IMAGE_FILES_PATH = PAOGARDEN_DIR + "files/"
 PROJECT_DIR = BASE_DIR + "kobo_highlights/"
 SQLITE_DB_PATH = PROJECT_DIR
 SQLITE_DB_NAME = "my_kobo_db.sqlite"

@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 from textual.app import ComposeResult
 from textual.widget import Widget
@@ -45,9 +46,7 @@ class TiddlerInformationWidget(Widget, can_focus=True):
                  highlight_id: str,
                  chapter: str = ""):
         super().__init__()
-        self.book_name = book_metadata["title"]
-        self.book_author = book_metadata["author"]
-        self.book_filename = book_metadata["filename"]
+        self.book_metadata = book_metadata
         self.highlight_id = highlight_id
         self.chapter = chapter
         self.edited_quote = reactive("")
@@ -91,7 +90,9 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         try:
             success = create_highlight_tiddler(
                 tiddler_title=self.highlight_title.value,
-                original_filename=self.book_filename,
+                book_title=self.book_metadata["title"],
+                book_author=self.book_metadata["author"],
+                book_filepath=self.book_metadata["filename"],
                 highlight=self.edited_quote.strip(),
                 tags=self.highlight_tags.value.split(),
                 chapter=self.chapter if hasattr(self, 'chapter') else None
@@ -105,6 +106,7 @@ class TiddlerInformationWidget(Widget, can_focus=True):
                 
         except Exception as e:
             logging.error(f"Error creating tiddler: {str(e)}")
+            logging.error(traceback.format_exc())
             self.notify(f"Error creating tiddler: {str(e)}", severity="error")
 
 
@@ -278,7 +280,7 @@ class SingleHighlightScreen(Screen):
         self.styles.layout = 'horizontal'
         # TODO refactor this part
         info = get_highlight_from_database(self.highlight_id)
-        self.book_name, self.author, _, _, section, path = info
+        _, _, _, _, section, path = info
         book_toc = get_table_of_contents_from_epub(BOOKS_DIR + path)
         self.chapter = match_highlight_section_to_chapter(section, book_toc)
         self.closed_highlight = get_highlight_context_from_id(self.highlight_id)
