@@ -72,7 +72,6 @@ class MainScreen(App[None]):
         if event.key == "enter":
             selected_book_index = self.book_list.highlighted
             selected_book_option = self.book_list._options[selected_book_index]
-            logging.debug(f"SELECTED_BOOK (on main screen)\n{selected_book_option}")
             self.push_screen(BookHighlightsScreen("book_highlights",
                                                   selected_book_option),
                              check_highlights_panel_quit)
