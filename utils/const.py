@@ -2,7 +2,8 @@ from textual.binding import Binding
 
 BASE_DIR = '/home/apinto/'
 BOOKS_DIR = BASE_DIR + "books/"
-TIDDLERS_PATH = BASE_DIR + 'paogarden/tiddlers/'
+PAOGARDEN_DIR = BASE_DIR + "paogarden/"
+TIDDLERS_PATH = PAOGARDEN_DIR + "tiddlers/"
 PROJECT_DIR = BASE_DIR + "kobo_highlights/"
 SQLITE_DB_PATH = PROJECT_DIR
 SQLITE_DB_NAME = "my_kobo_db.sqlite"

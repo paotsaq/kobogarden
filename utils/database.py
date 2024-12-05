@@ -97,13 +97,13 @@ def get_book_details_from_book_name(book_name: str) -> tuple[str, str, str]:
 # returns a list with
 # full highlight content and date of highlight
 def get_all_highlights_of_book_from_database(
-        book_name: str
+        filename: str
         ) -> list[tuple]:
     """
-    Get all highlights for a specific book.
+    Get all highlights for a specific book using its filename.
     
     Args:
-        book_name: The title of the book
+        filename: The epub filename (unique identifier)
         
     Returns:
         list[tuple]: List of highlight tuples (text, date_created, bookmark_id, start_container_path)
@@ -119,21 +119,7 @@ def get_all_highlights_of_book_from_database(
             
         c = conn.cursor()
         
-        # First get the ContentID for this book
-        c.execute("""
-            SELECT ContentID
-            FROM content 
-            WHERE Title=? AND ContentType=6
-            LIMIT 1
-        """, (book_name,))
-        
-        result = c.fetchone()
-        if not result:
-            raise BookNotFoundError(f"No book found with title: {book_name}")
-            
-        content_id = result[0]
-        
-        # Then get all highlights for this specific ContentID
+        # Get highlights using ContentID (which contains the filename)
         c.execute("""
             SELECT
                 Bookmark.Text,
@@ -143,16 +129,16 @@ def get_all_highlights_of_book_from_database(
             FROM "Bookmark"
             LEFT OUTER JOIN content
             ON (content.contentID=Bookmark.VolumeID and content.ContentType=6)
-            WHERE content.ContentID=?
+            WHERE content.ContentID LIKE ?
             ORDER BY Bookmark.DateCreated
-        """, (content_id,))
+        """, (f"%{filename}%",))
         
         all_highlights = c.fetchall()
-        logging.debug(f"Found {len(all_highlights)} highlights for book '{book_name}'")
+        logging.debug(f"Found {len(all_highlights)} highlights for book '{filename}'")
         return all_highlights
         
     except sqlite3.Error as e:
-        logging.error(f"Database error getting highlights for '{book_name}': {str(e)}")
+        logging.error(f"Database error getting highlights for '{filename}': {str(e)}")
         raise DatabaseError(f"Database error: {str(e)}")
         
     finally:

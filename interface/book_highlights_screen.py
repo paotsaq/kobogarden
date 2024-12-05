@@ -22,7 +22,8 @@ from utils.toc_handling import (
     match_highlight_section_to_chapter
         )
 from utils.logging import logging
-from interface.book_metadata_panel import BookMetadataModal
+from interface.book_metadata_modal import BookMetadataModal
+from textual.binding import Binding
 
 
 class QuotesList(OptionList):
@@ -36,7 +37,7 @@ class BookHighlightsScreen(Screen):
     """Screen responsible for displaying each books' highlights"""
 
     BINDINGS = [
-        ("m", "configure_metadata", "Configure Metadata"),
+        Binding("m", "edit_metadata", "Edit Metadata", show=True),
         # ... your existing bindings ...
     ]
 
@@ -53,16 +54,28 @@ class BookHighlightsScreen(Screen):
         """
         super().__init__(name)
         self.book_option = book_option
-        self.book_metadata = book_metadata
-        logging.debug(f"Initializing BookHighlightsScreen with metadata: {book_metadata}")
+        
+        # Get latest metadata from TiddlerFilenameManager
+        manager = TiddlerFilenameManager()
+        manager.refresh_metadata()
+        title, author = manager.get_mapped_metadata(book_metadata["filename"])
+        
+        # Update metadata with latest info from mappings file
+        self.book_metadata = {
+            **book_metadata,
+            "title": title,
+            "author": author
+        }
+        
+        logging.debug(f"Initializing BookHighlightsScreen with metadata: {self.book_metadata}")
         self.highlight_option = highlight_option
         self.highlight_option_id = highlight_option_id
         
         try:
-            # Load highlights from database
-            self.highlights = get_all_highlights_of_book_from_database(self.book_metadata["title"])
+            # Load highlights from database using filename
+            self.highlights = get_all_highlights_of_book_from_database(self.book_metadata["filename"])
             if not self.highlights:
-                logging.info(f"No highlights found for book: {self.book_metadata['title']}")
+                logging.info(f"No highlights found for book: {self.book_metadata['filename']}")
                 self.highlights = []
             self.book_toc = get_table_of_contents_from_epub(BOOKS_DIR + self.book_metadata["filename"])
         except BookNotFoundError as e:
@@ -113,3 +126,32 @@ class BookHighlightsScreen(Screen):
                 "highlight_option": selected_highlight_option,
                 "highlight_option_id": self.quotes_list.highlighted
                                 }])
+
+    async def action_edit_metadata(self) -> None:
+        """Handle the metadata editing action."""
+        logging.info(f"Opening metadata modal with current metadata: {self.book_metadata}")
+        
+        def check_modal_result(result: dict | None) -> None:
+            """Handle the modal result"""
+            logging.info(f"Modal callback received result: {result}")
+            
+            if result is not None:
+                try:
+                    manager = TiddlerFilenameManager()
+                    manager.update_metadata_mapping(
+                        original_filename=result["filename"],
+                        title=result["title"],
+                        author=result["author"]
+                    )
+                    # Update current screen's metadata
+                    self.book_metadata = result
+                    self.sub_title = f"{result['title']} by {result['author']}"
+                    logging.info(f"Successfully updated metadata: {self.book_metadata}")
+                    self.notify("Book metadata updated successfully", severity="success")
+                except Exception as e:
+                    logging.error(f"Failed to update metadata mapping: {str(e)}")
+                    self.notify("Failed to save metadata changes", severity="error")
+            else:
+                logging.info("Metadata update cancelled by user")
+        
+        await self.app.push_screen(BookMetadataModal(self.book_metadata), check_modal_result)

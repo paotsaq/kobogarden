@@ -20,11 +20,6 @@ from utils.database import (
 from utils.tiddler_handling import (
     add_highlight_id_to_record,
     create_highlight_tiddler,
-    book_tiddler_exists,
-    create_book_tiddler,
-    increment_book_tiddler_highlight_number,
-    tiddler_exists,
-    copy_to_clipboard
 )
 from utils.highlight_handling import (
         get_full_context_from_highlight,
@@ -46,13 +41,13 @@ class TiddlerInformationWidget(Widget, can_focus=True):
     ]
 
     def __init__(self,
-                 book_name: str,
-                 author: str,
+                 book_metadata: dict,
                  highlight_id: str,
                  chapter: str = ""):
         super().__init__()
-        self.book_name = book_name
-        self.author = author
+        self.book_name = book_metadata["title"]
+        self.book_author = book_metadata["author"]
+        self.book_filename = book_metadata["filename"]
         self.highlight_id = highlight_id
         self.chapter = chapter
         self.edited_quote = reactive("")
@@ -75,8 +70,10 @@ class TiddlerInformationWidget(Widget, can_focus=True):
         await self._create_tiddler()
 
     async def action_create_tiddler(self) -> None:
-        """Handle the enter key binding."""
-        await self._create_tiddler()
+        """Handle the enter key binding by simulating a button press"""
+        # Find and press the create button
+        create_button = self.query_one(Button)
+        await create_button.press()
 
     async def on_key(self, event: events.Key) -> None:
         """Handle key events."""
@@ -85,37 +82,30 @@ class TiddlerInformationWidget(Widget, can_focus=True):
             await self._create_tiddler()
 
     async def _create_tiddler(self) -> None:
-        """Create a new tiddler with the current input values."""
-        if self.highlight_title.value == "" or self.edited_quote == "":
+        """Create a new tiddler with the current highlight information"""
+        if not self.highlight_title.value:
+            self.notify("Please enter a title for the highlight", severity="error")
             return
-
+        
         # Create the highlight tiddler
-        if create_highlight_tiddler(
-                self.highlight_title.value,
-                self.book_name,
-                self.author,
-                self.highlight_tags.value.split(),
-                self.highlight_notes.text,
-                self.edited_quote,
-                self.chapter):
-            add_highlight_id_to_record(self.highlight_id)
-            # Update button to show success
-            self.create_button.label = "✓ Tiddler Created!"
+        try:
+            success = create_highlight_tiddler(
+                tiddler_title=self.highlight_title.value,
+                original_filename=self.book_filename,
+                highlight=self.edited_quote.strip(),
+                tags=self.highlight_tags.value.split(),
+                chapter=self.chapter if hasattr(self, 'chapter') else None
+            )
             
-            # Reset button text after 2 seconds
-            async def reset_button() -> None:
-                self.create_button.label = "Create tiddler!"
-            
-            self.set_timer(2, reset_button)
-        else:
-            # Show error state
-            self.create_button.label = "⚠ Tiddler already exists!"
-            
-            # Reset button text after 2 seconds
-            async def reset_button() -> None:
-                self.create_button.label = "Create tiddler!"
-            
-            self.set_timer(2, reset_button)
+            if success:
+                add_highlight_id_to_record(self.highlight_id)
+                self.notify("Tiddler created successfully!", severity="success")
+            else:
+                self.notify("Failed to create tiddler", severity="error")
+                
+        except Exception as e:
+            logging.error(f"Error creating tiddler: {str(e)}")
+            self.notify(f"Error creating tiddler: {str(e)}", severity="error")
 
 
 
@@ -300,8 +290,7 @@ class SingleHighlightScreen(Screen):
             yield SingleHighlightWidget(self.closed_highlight,
                                         self.soup)
         with Vertical(id="controls"):
-            yield TiddlerInformationWidget(self.book_name,
-                                           self.author,
+            yield TiddlerInformationWidget(self.book_metadata,
                                            self.highlight_id,
                                            self.chapter)
         yield Header()
